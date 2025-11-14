@@ -1,0 +1,199 @@
+# path: framework/trainer.py
+
+import os
+import json
+import time
+from datetime import datetime
+from typing import List
+
+import ray
+from ray.rllib.algorithms.ppo import PPOConfig
+from ray.rllib.policy.sample_batch import concat_samples
+
+from compression.base import BaseCompressor
+from framework.policy_manager import PolicyManager, CompileMode
+
+
+class Trainer:
+    """
+    主训练驱动层：
+        - RLlib rollout + train
+        - 调用 PolicyManager 进行同步/异步压缩
+        - 日志统计
+        - 支持任意压缩器列表（compile/quant/prune/...）
+    """
+
+    def __init__(self,
+                 config: PPOConfig,
+                 compressors: List[BaseCompressor],
+                 compile_mode=CompileMode.NONE,
+                 trigger_every=5,
+                 enable_diff_check=True,
+                 compile_training_backbone=False,
+                 log_dir="logs"):
+
+        # 构建 RLlib algorithm
+        self.algo = config.build()
+
+        # 压缩管理器
+        self.manager = PolicyManager(
+            algo=self.algo,
+            compressors=compressors,
+            mode=compile_mode,
+            trigger_every=trigger_every,
+            enable_diff_check=enable_diff_check,
+            compile_training_backbone=compile_training_backbone,
+        )
+
+        # 日志
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.log_path = os.path.join(log_dir, f"{compile_mode.value}_{timestamp}.jsonl")
+        self.log_file = open(self.log_path, "w")
+
+        self.stats = []
+        self.compile_mode = compile_mode
+
+    # ------------------------------------------------------------
+    # 写日志到 JSONL
+    # ------------------------------------------------------------
+    def _log(self, rec):
+        json.dump(rec, self.log_file)
+        self.log_file.write("\n")
+        self.log_file.flush()
+
+    # ------------------------------------------------------------
+    # 单个 epoch
+    # ------------------------------------------------------------
+    def train_epoch(self, epoch: int):
+        """
+        一个完整 epoch：
+            1) async 模式：尝试 swap（若后台已压缩完成）
+            2) rollout
+            3) learn_on_batch
+            4) trigger（同步或异步压缩）
+            5) 统计日志
+        """
+
+        # ==================================================================
+        # (1) async 模式：尝试 swap（将 pending compiled backbone 下发）
+        # ==================================================================
+        meta_swap = self.manager.maybe_swap()
+
+        # ==================================================================
+        # (2) rollout：采样
+        # ==================================================================
+        t_rollout_start = time.time()
+        workers = self.algo.workers.remote_workers()
+        if workers:
+            samples = ray.get([w.sample.remote() for w in workers])
+        else:
+            samples = [self.algo.workers.local_worker().sample()]
+        train_batch = concat_samples(samples)
+        sample_count = train_batch.count
+        t_rollout_end = time.time()
+        rollout_time = t_rollout_end - t_rollout_start
+
+        # ==================================================================
+        # (3) train：local worker
+        # ==================================================================
+        with self.manager.model_lock:
+            t_train_start = time.time()
+            result = self.algo.workers.local_worker().learn_on_batch(train_batch)
+            t_train_end = time.time()
+        train_time = t_train_end - t_train_start
+
+        # ==================================================================
+        # (4) trigger（同步或异步触发压缩）
+        # ==================================================================
+        meta_trigger = self.manager.maybe_trigger(epoch)
+        step_time = (time.time() - t_rollout_start)
+        throughput = sample_count / step_time
+
+        # ==================================================================
+        # (5) compile stats
+        # ==================================================================
+        compile_latency = None
+        compressor_name = self.manager.get_infer_compressor_name()
+
+        # SYNC → 当前 epoch 编译
+        if self.compile_mode == CompileMode.SYNC and meta_trigger:
+            info = meta_trigger.get(compressor_name)
+            if info:
+                compile_latency = info.get("latency")
+
+        # ASYNC → 在 swap 时统计
+        if self.compile_mode == CompileMode.ASYNC and meta_swap:
+            info = meta_swap.get(compressor_name)
+            if info:
+                compile_latency = info.get("latency")
+
+        # ==================================================================
+        # (6) log
+        # ==================================================================
+        rec = {
+            "epoch": epoch,
+            "reward_mean": result.get("episode_reward_mean", 0.0),
+            "total_time": step_time,
+            "rollout_time": rollout_time,
+            "train_time": train_time,
+            "throughput": throughput,
+            "compile_latency": compile_latency,
+        }
+        self.stats.append(rec)
+        self._log(rec)
+
+        print(
+            f"[{self.compile_mode.value.upper()}] Epoch {epoch:3d} | "
+            f"Reward={rec['reward_mean']:.2f} | "
+            f"Samples={sample_count} | "
+            f"Total={step_time:.2f}s "
+            f"(Rollout={rollout_time:.2f}s, Train={train_time:.2f}s) | "
+            f"Thrpt={throughput:.1f}/s | "
+            f"Compile={compile_latency}"
+        )
+
+    # ------------------------------------------------------------
+    # 训练主循环
+    # ------------------------------------------------------------
+    def run(self, num_epochs=10):
+        for e in range(1, num_epochs + 1):
+            self.train_epoch(e)
+
+    # ------------------------------------------------------------
+    # 打印总结
+    # ------------------------------------------------------------
+    def summary(self):
+        if not self.stats:
+            print(f"\n=== Summary ({self.compile_mode.value}) ===")
+            print("No epochs recorded.")
+            return
+
+        total_epochs = len(self.stats)
+        reward_sum = sum(s["reward_mean"] for s in self.stats)
+        time_sum = sum(s["total_time"] for s in self.stats)
+        rollout_sum = sum(s["rollout_time"] for s in self.stats)
+        train_sum = sum(s["train_time"] for s in self.stats)
+        throughput_sum = sum(s["throughput"] for s in self.stats)
+
+        reward_avg = reward_sum / total_epochs
+        time_avg = time_sum / total_epochs
+        rollout_avg = rollout_sum / total_epochs
+        train_avg = train_sum / total_epochs
+        throughput_avg = throughput_sum / total_epochs
+
+        compile_latencies = [s["compile_latency"] for s in self.stats if s["compile_latency"] is not None]
+        compile_avg = sum(compile_latencies) / len(compile_latencies) if compile_latencies else None
+
+        print(f"\n=== Summary ({self.compile_mode.value}) ===")
+        print(f"Epochs: {total_epochs}")
+        print(f"Reward mean (avg over epochs): {reward_avg:.2f}")
+        print(f"Total time (avg per epoch): {time_avg:.2f}s")
+        print(f"  Rollout time avg: {rollout_avg:.2f}s | Train time avg: {train_avg:.2f}s")
+        print(f"Throughput (avg samples/s): {throughput_avg:.1f}")
+        if compile_avg is not None:
+            print(f"Compile latency (avg when available): {compile_avg:.3f}s")
+        else:
+            print("Compile latency: N/A")
+
+        self.log_file.close()

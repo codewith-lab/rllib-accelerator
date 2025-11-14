@@ -1,0 +1,10 @@
+{"epoch": 1, "reward_mean": 0.0, "total_time": 5.946754217147827, "rollout_time": 5.285975217819214, "train_time": 0.6607680320739746, "throughput": 3363.179184760787, "compile_latency": null}
+{"epoch": 2, "reward_mean": 0.0, "total_time": 5.760993957519531, "rollout_time": 5.121881723403931, "train_time": 0.6391072273254395, "throughput": 3471.623151747108, "compile_latency": null}
+{"epoch": 3, "reward_mean": 0.0, "total_time": 5.75795316696167, "rollout_time": 5.1316680908203125, "train_time": 0.6262798309326172, "throughput": 3473.456525273113, "compile_latency": null}
+{"epoch": 4, "reward_mean": 0.0, "total_time": 5.850951910018921, "rollout_time": 5.193060874938965, "train_time": 0.6578850746154785, "throughput": 3418.2472027761587, "compile_latency": null}
+{"epoch": 5, "reward_mean": 0.0, "total_time": 5.759539842605591, "rollout_time": 5.130796909332275, "train_time": 0.6287369728088379, "throughput": 3472.499634788894, "compile_latency": null}
+{"epoch": 6, "reward_mean": 0.0, "total_time": 5.77791690826416, "rollout_time": 5.12884783744812, "train_time": 0.6490628719329834, "throughput": 3461.455108742388, "compile_latency": null}
+{"epoch": 7, "reward_mean": 0.0, "total_time": 5.844987869262695, "rollout_time": 5.202862977981567, "train_time": 0.6421198844909668, "throughput": 3421.7350741093774, "compile_latency": null}
+{"epoch": 8, "reward_mean": 0.0, "total_time": 5.664737939834595, "rollout_time": 5.034895896911621, "train_time": 0.6298360824584961, "throughput": 3530.6134568661055, "compile_latency": null}
+{"epoch": 9, "reward_mean": 0.0, "total_time": 5.790544748306274, "rollout_time": 5.163148880004883, "train_time": 0.6273891925811768, "throughput": 3453.90647500824, "compile_latency": null}
+{"epoch": 10, "reward_mean": 0.0, "total_time": 5.782023906707764, "rollout_time": 5.142411947250366, "train_time": 0.6396059989929199, "throughput": 3458.996421097095, "compile_latency": null}
