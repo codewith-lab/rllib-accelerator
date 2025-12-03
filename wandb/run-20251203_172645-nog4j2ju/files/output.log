@@ -1,0 +1,22 @@
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[SyncCompile] ✅ Compiled & swapped immediately.
+[SYNC] Epoch   1 | Reward=0.00 | Samples=8000 | Total=8.18s (Rollout=4.36s, Train=3.37s) | Thrpt=978.5/s | Compile=0.0013813972473144531
+[36m(RolloutWorker pid=74023)[0m W1203 17:26:56.185000 74023 site-packages/torch/utils/cpp_extension.py:118] [0/0] No CUDA runtime is found, using CUDA_HOME='/usr'
+[36m(RolloutWorker pid=74023)[0m 2025-12-03 17:26:43,936	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 3x across cluster][0m
+[SYNC] Epoch   2 | Reward=0.00 | Samples=8000 | Total=11.79s (Rollout=11.13s, Train=0.66s) | Thrpt=678.3/s | Compile=None
+[SYNC] Epoch   3 | Reward=0.00 | Samples=8000 | Total=4.82s (Rollout=4.17s, Train=0.65s) | Thrpt=1659.4/s | Compile=None
+[SYNC] Epoch   4 | Reward=0.00 | Samples=8000 | Total=4.81s (Rollout=4.18s, Train=0.63s) | Thrpt=1662.0/s | Compile=None
+[SYNC] Epoch   5 | Reward=0.00 | Samples=8000 | Total=4.82s (Rollout=4.20s, Train=0.62s) | Thrpt=1658.7/s | Compile=None
+[SYNC] Epoch   6 | Reward=0.00 | Samples=8000 | Total=4.83s (Rollout=4.20s, Train=0.62s) | Thrpt=1656.7/s | Compile=None
+[SYNC] Epoch   7 | Reward=0.00 | Samples=8000 | Total=4.87s (Rollout=4.22s, Train=0.64s) | Thrpt=1642.8/s | Compile=None
+[SYNC] Epoch   8 | Reward=0.00 | Samples=8000 | Total=4.89s (Rollout=4.25s, Train=0.64s) | Thrpt=1634.9/s | Compile=None
+[SYNC] Epoch   9 | Reward=0.00 | Samples=8000 | Total=4.83s (Rollout=4.20s, Train=0.63s) | Thrpt=1654.9/s | Compile=None
+[SYNC] Epoch  10 | Reward=0.00 | Samples=8000 | Total=4.84s (Rollout=4.20s, Train=0.64s) | Thrpt=1652.6/s | Compile=None
+
+=== Summary (sync) ===
+Epochs: 10
+Reward mean (avg over epochs): 0.00
+Total time (avg per epoch): 5.87s
+  Rollout time avg: 4.91s | Train time avg: 0.91s
+Throughput (avg samples/s): 1487.9
+Compile latency (avg when available): 0.001s

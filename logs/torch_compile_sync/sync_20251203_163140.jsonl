@@ -1,0 +1,10 @@
+{"epoch": 1, "reward_mean": 0.0, "total_time": 4.407222270965576, "rollout_time": 1.4347119331359863, "train_time": 2.7099292278289795, "throughput": 1815.2022993492642, "compile_latency": 0.0011501312255859375}
+{"epoch": 2, "reward_mean": 0.0, "total_time": 9.172967672348022, "rollout_time": 9.162962198257446, "train_time": 0.00973820686340332, "throughput": 872.12778740255, "compile_latency": null}
+{"epoch": 3, "reward_mean": 0.0, "total_time": 1.4637842178344727, "rollout_time": 1.4440889358520508, "train_time": 0.012346267700195312, "throughput": 5465.2864148482395, "compile_latency": 0.00013589859008789062}
+{"epoch": 4, "reward_mean": 0.0, "total_time": 1.4641993045806885, "rollout_time": 1.4449388980865479, "train_time": 0.01898932456970215, "throughput": 5463.7370574977895, "compile_latency": null}
+{"epoch": 5, "reward_mean": 0.0, "total_time": 1.4645204544067383, "rollout_time": 1.4446616172790527, "train_time": 0.011979341506958008, "throughput": 5462.538932746224, "compile_latency": 0.00023865699768066406}
+{"epoch": 6, "reward_mean": 0.0, "total_time": 1.4663875102996826, "rollout_time": 1.451280117034912, "train_time": 0.014856100082397461, "throughput": 5455.5838370207175, "compile_latency": null}
+{"epoch": 7, "reward_mean": 0.0, "total_time": 1.4700119495391846, "rollout_time": 1.4527506828308105, "train_time": 0.009460687637329102, "throughput": 5442.132631988345, "compile_latency": 0.00013637542724609375}
+{"epoch": 8, "reward_mean": 0.0, "total_time": 1.4711744785308838, "rollout_time": 1.453824758529663, "train_time": 0.01712346076965332, "throughput": 5437.832233188825, "compile_latency": null}
+{"epoch": 9, "reward_mean": 0.0, "total_time": 1.462486982345581, "rollout_time": 1.4452199935913086, "train_time": 0.009425163269042969, "throughput": 5470.134159532386, "compile_latency": 0.00013518333435058594}
+{"epoch": 10, "reward_mean": 0.0, "total_time": 1.445176601409912, "rollout_time": 1.4355368614196777, "train_time": 0.009409427642822266, "throughput": 5535.655636961747, "compile_latency": null}

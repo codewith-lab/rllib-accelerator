@@ -46,11 +46,10 @@ class CompressionPolicy:
 
         返回 True 表示需要压缩。
         """
-        if not self.enable_diff_check:
-            return False
-
         if last_snapshot is None:
             return True  # 第一次一定要压缩
+        if not self.enable_diff_check:
+            return False
 
         # 如果任意一个 compressor 判断需要重新压缩 → 执行压缩
         return any(

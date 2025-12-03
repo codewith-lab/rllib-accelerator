@@ -30,7 +30,13 @@ class Trainer:
                  trigger_every=5,
                  enable_diff_check=True,
                  compile_training_backbone=False,
-                 log_dir="logs"):
+                 log_dir="logs",
+                 device: str = "cpu",
+                 wandb_enabled: bool = False,
+                 wandb_project: str = None,
+                 wandb_run_name: str = None,
+                 wandb_config: dict = None,
+                 async_warmup: bool = True):
 
         # 构建 RLlib algorithm
         self.algo = config.build()
@@ -43,6 +49,8 @@ class Trainer:
             trigger_every=trigger_every,
             enable_diff_check=enable_diff_check,
             compile_training_backbone=compile_training_backbone,
+            device=device,
+            async_warmup=async_warmup,
         )
 
         # 日志
@@ -53,6 +61,28 @@ class Trainer:
 
         self.stats = []
         self.compile_mode = compile_mode
+        self.device = device
+
+        self.wandb_run = None
+        if wandb_enabled and wandb_project:
+            try:
+                import wandb
+                run_name = wandb_run_name or f"{compile_mode.value}_{timestamp}"
+                cfg = {
+                    "compile_mode": compile_mode.value,
+                    "device": str(device),
+                    "trigger_every": trigger_every,
+                    "enable_diff_check": enable_diff_check,
+                }
+                if wandb_config:
+                    cfg.update(wandb_config)
+                self.wandb_run = wandb.init(project=wandb_project, name=run_name, config=cfg)
+                self._wandb = wandb
+            except ImportError:
+                print("[Trainer] ⚠️ 未检测到 wandb，跳过云端日志。")
+                self.wandb_run = None
+        elif wandb_enabled and not wandb_project:
+            print("[Trainer] ⚠️ 未提供 wandb 项目名，跳过云端日志。")
 
     # ------------------------------------------------------------
     # 写日志到 JSONL
@@ -61,6 +91,8 @@ class Trainer:
         json.dump(rec, self.log_file)
         self.log_file.write("\n")
         self.log_file.flush()
+        if self.wandb_run is not None:
+            self.wandb_run.log(rec, step=rec.get("epoch"))
 
     # ------------------------------------------------------------
     # 单个 epoch
@@ -100,6 +132,8 @@ class Trainer:
         with self.manager.model_lock:
             t_train_start = time.time()
             result = self.algo.workers.local_worker().learn_on_batch(train_batch)
+            # 训练后立即同步权重，保持 rollout workers on-policy
+            self.algo.workers.sync_weights()
             t_train_end = time.time()
         train_time = t_train_end - t_train_start
 
@@ -197,3 +231,5 @@ class Trainer:
             print("Compile latency: N/A")
 
         self.log_file.close()
+        if self.wandb_run is not None:
+            self.wandb_run.finish()

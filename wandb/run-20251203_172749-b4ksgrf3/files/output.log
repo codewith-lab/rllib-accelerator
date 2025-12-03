@@ -1,0 +1,23 @@
+[ASYNC] Epoch   1 | Reward=0.00 | Samples=8000 | Total=5.03s (Rollout=4.33s, Train=0.69s) | Thrpt=1591.6/s | Compile=None
+[ASYNC] Epoch   2 | Reward=0.00 | Samples=8000 | Total=5.12s (Rollout=4.35s, Train=0.77s) | Thrpt=1561.2/s | Compile=None
+[36m(RolloutWorker pid=78284)[0m W1203 17:28:01.834000 78284 site-packages/torch/utils/cpp_extension.py:118] [0/0] No CUDA runtime is found, using CUDA_HOME='/usr'
+[36m(RolloutWorker pid=78283)[0m 2025-12-03 17:27:48,150	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 2x across cluster][0m
+[36m(RolloutWorker pid=78282)[0m W1203 17:28:03.118000 78282 site-packages/torch/utils/cpp_extension.py:118] [0/0] No CUDA runtime is found, using CUDA_HOME='/usr'
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   3 | Reward=0.00 | Samples=8000 | Total=5.12s (Rollout=4.41s, Train=0.70s) | Thrpt=1563.6/s | Compile=0.0015370845794677734
+[ASYNC] Epoch   4 | Reward=0.00 | Samples=8000 | Total=4.90s (Rollout=4.21s, Train=0.68s) | Thrpt=1633.6/s | Compile=None
+[ASYNC] Epoch   5 | Reward=0.00 | Samples=8000 | Total=4.97s (Rollout=4.21s, Train=0.75s) | Thrpt=1608.8/s | Compile=None
+[ASYNC] Epoch   6 | Reward=0.00 | Samples=8000 | Total=5.00s (Rollout=4.20s, Train=0.80s) | Thrpt=1601.1/s | Compile=None
+[ASYNC] Epoch   7 | Reward=0.00 | Samples=8000 | Total=4.86s (Rollout=4.18s, Train=0.68s) | Thrpt=1644.9/s | Compile=None
+[ASYNC] Epoch   8 | Reward=0.00 | Samples=8000 | Total=4.97s (Rollout=4.28s, Train=0.68s) | Thrpt=1611.1/s | Compile=None
+[ASYNC] Epoch   9 | Reward=0.00 | Samples=8000 | Total=4.96s (Rollout=4.21s, Train=0.74s) | Thrpt=1613.7/s | Compile=None
+[ASYNC] Epoch  10 | Reward=0.00 | Samples=8000 | Total=5.00s (Rollout=4.23s, Train=0.76s) | Thrpt=1600.8/s | Compile=None
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 0.00
+Total time (avg per epoch): 4.99s
+  Rollout time avg: 4.26s | Train time avg: 0.72s
+Throughput (avg samples/s): 1603.0
+Compile latency (avg when available): 0.002s

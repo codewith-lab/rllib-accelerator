@@ -23,7 +23,8 @@ class CompileCompressor(BaseCompressor):
 
     def __init__(self,
                  backend: str = "inductor",
-                 diff_threshold: float = 1e-4):
+                 diff_threshold: float = 1e-4,
+                 device: str = "cpu"):
         """
         参数:
             backend: torch.compile backend（一般用 inductor）
@@ -31,6 +32,18 @@ class CompileCompressor(BaseCompressor):
         """
         self.backend = backend
         self.diff_threshold = diff_threshold
+        self.device_str = device
+        if torch is not None:
+            try:
+                resolved = torch.device(device)
+                if resolved.type.startswith("cuda") and not torch.cuda.is_available():
+                    print(f"[CompileCompressor] ⚠️ Device {device} unavailable, fallback to CPU.")
+                    resolved = torch.device("cpu")
+                self.device = resolved
+            except (RuntimeError, TypeError):
+                self.device = torch.device("cpu")
+        else:
+            self.device = None
         self._raw_model: Optional[PolicyBackbone] = None
         self._compiled_model: Optional[Any] = None
         self._meta: Optional[Dict[str, Any]] = None
@@ -104,6 +117,8 @@ class CompileCompressor(BaseCompressor):
             reused = True
         else:
             bb = PolicyBackbone(in_dim, num_outputs, hidden_dims, use_residual)
+            if self.device is not None:
+                bb = bb.to(self.device)
             bb.load_state_dict(snapshot)
 
             t0 = time.time()

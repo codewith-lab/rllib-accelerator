@@ -1,0 +1,10 @@
+{"epoch": 1, "reward_mean": 0.0, "total_time": 1.4551599025726318, "rollout_time": 1.4423191547393799, "train_time": 0.01107168197631836, "throughput": 5497.677599455908, "compile_latency": null}
+{"epoch": 2, "reward_mean": 0.0, "total_time": 1.4367330074310303, "rollout_time": 1.4187560081481934, "train_time": 0.015906810760498047, "throughput": 5568.188354149744, "compile_latency": null}
+{"epoch": 3, "reward_mean": 0.0, "total_time": 8.96202039718628, "rollout_time": 8.945411682128906, "train_time": 0.01586771011352539, "throughput": 892.655857211805, "compile_latency": 0.0014331340789794922}
+{"epoch": 4, "reward_mean": 0.0, "total_time": 1.4532387256622314, "rollout_time": 1.4353461265563965, "train_time": 0.016582727432250977, "throughput": 5504.945511519074, "compile_latency": 0.00013756752014160156}
+{"epoch": 5, "reward_mean": 0.0, "total_time": 1.4243712425231934, "rollout_time": 1.413414716720581, "train_time": 0.010672569274902344, "throughput": 5616.513280504351, "compile_latency": null}
+{"epoch": 6, "reward_mean": 0.0, "total_time": 1.4505436420440674, "rollout_time": 1.4343149662017822, "train_time": 0.01584458351135254, "throughput": 5515.17359982814, "compile_latency": null}
+{"epoch": 7, "reward_mean": 0.0, "total_time": 1.4502811431884766, "rollout_time": 1.4351565837860107, "train_time": 0.01368570327758789, "throughput": 5516.171838524919, "compile_latency": 0.00027823448181152344}
+{"epoch": 8, "reward_mean": 0.0, "total_time": 1.449681282043457, "rollout_time": 1.4327869415283203, "train_time": 0.01660609245300293, "throughput": 5518.454365861216, "compile_latency": null}
+{"epoch": 9, "reward_mean": 0.0, "total_time": 1.4452149868011475, "rollout_time": 1.4236242771148682, "train_time": 0.021326780319213867, "throughput": 5535.508608104927, "compile_latency": 0.0001361370086669922}
+{"epoch": 10, "reward_mean": 0.0, "total_time": 1.4481933116912842, "rollout_time": 1.4352083206176758, "train_time": 0.011049270629882812, "throughput": 5524.124393764211, "compile_latency": null}

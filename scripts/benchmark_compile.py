@@ -55,7 +55,7 @@ def benchmark(model, batch, steps=100, warmup=20):
 
 
 def main():
-    device = torch.device("cpu")
+    device = torch.device("cuda")
     batch = torch.randn(4096, 64, device=device)
 
     vanilla = MLP().to(device)

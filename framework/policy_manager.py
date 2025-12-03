@@ -47,7 +47,9 @@ class PolicyManager:
                  trigger_every: int = 5,
                  enable_diff_check: bool = True,
                  infer_output_index: int = 0,
-                 compile_training_backbone: bool = False):
+                 compile_training_backbone: bool = False,
+                 device: str = "cpu",
+                 async_warmup: bool = True):
 
         self.algo = algo
         self.mode = mode
@@ -56,13 +58,11 @@ class PolicyManager:
             raise ValueError("PolicyManager requires at least one compressor.")
         if infer_output_index < 0 or infer_output_index >= len(compressors):
             raise ValueError("infer_output_index 超出了 compressors 范围。")
-        self._compile_only_mode = (
-            len(compressors) == 1
-            and compressors[0].__class__.__name__ == "CompileCompressor"
-        )
-        self._compiled_once = False
+
+        self.device = self._resolve_device(device)
 
         self.compressors = compressors
+        self.async_warmup = async_warmup
 
         # compression policy
         self.policy = CompressionPolicy(
@@ -89,13 +89,13 @@ class PolicyManager:
 
         self._compile_training_backbone_flag = compile_training_backbone
         self._training_backbone_compiled = False
-        if self._compile_training_backbone_flag and self.mode != CompileMode.NONE:
+        if self._compile_training_backbone_flag:
             self._compile_training_backbone_once()
 
     # ------------------------------------------------------------------
     # 广播 compiled_backbone 到 rollout workers
     # ------------------------------------------------------------------
-    def _broadcast_inference_model(self, model):
+    def _broadcast_inference_model(self, model, warmup=False):
         """
         将给定 inference backbone 设置到所有 rollout worker 的 policy.model 中。
         你的 CustomPolicyNet 需要实现 set_compiled_backbone()。
@@ -106,6 +106,8 @@ class PolicyManager:
             def inner(policy, pid):
                 if hasattr(policy.model, "set_compiled_backbone"):
                     policy.model.set_compiled_backbone(model)
+                    if warmup and hasattr(policy.model, "warmup_compiled_backbone"):
+                        policy.model.warmup_compiled_backbone()
                 return 1
             worker.foreach_policy(inner)
             return 1
@@ -133,10 +135,8 @@ class PolicyManager:
         self.current_infer_model = infer_model
         self.last_meta = meta
 
-        self._broadcast_inference_model(infer_model)
-        if self._compile_only_mode:
-            self._compiled_once = True
-
+        warmup = (self.mode == CompileMode.ASYNC and self.async_warmup)
+        self._broadcast_inference_model(infer_model, warmup=warmup)
         print("[AsyncCompile] 🔁 Swapped inference model.")
         return meta
 
@@ -146,9 +146,6 @@ class PolicyManager:
     def maybe_trigger(self, epoch: int) -> Optional[Dict[str, Any]]:
         if self.mode == CompileMode.NONE:
             return None
-        if self._compile_only_mode and self._compiled_once:
-            return None
-
         # 同步模式 —— 立即执行
         if self.mode == CompileMode.SYNC:
             outputs, meta = self.controller.run_sync(self.train_model, epoch)
@@ -162,10 +159,7 @@ class PolicyManager:
             self.current_infer_model = infer_model
             self.last_meta = meta
 
-            self._broadcast_inference_model(infer_model)
-            if self._compile_only_mode:
-                self._compiled_once = True
-
+            self._broadcast_inference_model(infer_model, warmup=False)
             print("[SyncCompile] ✅ Compiled & swapped immediately.")
             return meta
 
@@ -211,6 +205,22 @@ class PolicyManager:
         if hasattr(primary, "backend"):
             backend = getattr(primary, "backend") or backend
 
+        if hasattr(self.train_model, "to"):
+            self.train_model.to(self.device)
+
         self.train_model.backbone = torch.compile(self.train_model.backbone, backend=backend)
         self._training_backbone_compiled = True
         print(f"[PolicyManager] 🧠 Local training backbone compiled via torch.compile backend={backend}.")
+
+    def _resolve_device(self, device: str):
+        if torch is None:
+            return "cpu"
+        try:
+            resolved = torch.device(device)
+            if resolved.type.startswith("cuda") and not torch.cuda.is_available():
+                print(f"[PolicyManager] ⚠️ Device {device} unavailable, fallback to CPU.")
+                return torch.device("cpu")
+            return resolved
+        except (RuntimeError, TypeError):
+            print(f"[PolicyManager] ⚠️ Invalid device {device}, fallback to CPU.")
+            return torch.device("cpu")

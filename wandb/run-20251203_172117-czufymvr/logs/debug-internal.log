@@ -1,0 +1,12 @@
+{"time":"2025-12-03T17:21:17.162693727-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.1"}
+{"time":"2025-12-03T17:21:17.381561018-05:00","level":"INFO","msg":"stream: created new stream","id":"czufymvr"}
+{"time":"2025-12-03T17:21:17.381705548-05:00","level":"INFO","msg":"handler: started","stream_id":"czufymvr"}
+{"time":"2025-12-03T17:21:17.381786808-05:00","level":"INFO","msg":"stream: started","id":"czufymvr"}
+{"time":"2025-12-03T17:21:17.381803643-05:00","level":"INFO","msg":"writer: started","stream_id":"czufymvr"}
+{"time":"2025-12-03T17:21:17.381835721-05:00","level":"INFO","msg":"sender: started","stream_id":"czufymvr"}
+{"time":"2025-12-03T17:22:17.326131871-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-03T17:22:17.532207099-05:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-12-03T17:22:17.535935553-05:00","level":"INFO","msg":"stream: closing","id":"czufymvr"}
+{"time":"2025-12-03T17:22:17.53601465-05:00","level":"INFO","msg":"handler: closed","stream_id":"czufymvr"}
+{"time":"2025-12-03T17:22:17.536070256-05:00","level":"INFO","msg":"sender: closed","stream_id":"czufymvr"}
+{"time":"2025-12-03T17:22:17.536084946-05:00","level":"INFO","msg":"stream: closed","id":"czufymvr"}

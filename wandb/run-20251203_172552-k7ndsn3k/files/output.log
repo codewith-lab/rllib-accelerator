@@ -1,0 +1,19 @@
+2025-12-03 17:25:53,139	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[NONE] Epoch   1 | Reward=0.00 | Samples=8000 | Total=5.08s (Rollout=4.24s, Train=0.85s) | Thrpt=1574.0/s | Compile=None
+[NONE] Epoch   2 | Reward=0.00 | Samples=8000 | Total=4.92s (Rollout=4.19s, Train=0.73s) | Thrpt=1626.8/s | Compile=None
+[NONE] Epoch   3 | Reward=0.00 | Samples=8000 | Total=4.74s (Rollout=4.12s, Train=0.62s) | Thrpt=1687.2/s | Compile=None
+[NONE] Epoch   4 | Reward=0.00 | Samples=8000 | Total=4.73s (Rollout=4.11s, Train=0.62s) | Thrpt=1691.2/s | Compile=None
+[NONE] Epoch   5 | Reward=0.00 | Samples=8000 | Total=4.74s (Rollout=4.10s, Train=0.64s) | Thrpt=1687.7/s | Compile=None
+[NONE] Epoch   6 | Reward=0.00 | Samples=8000 | Total=4.71s (Rollout=4.08s, Train=0.63s) | Thrpt=1699.9/s | Compile=None
+[NONE] Epoch   7 | Reward=0.00 | Samples=8000 | Total=4.84s (Rollout=4.21s, Train=0.63s) | Thrpt=1653.5/s | Compile=None
+[NONE] Epoch   8 | Reward=0.00 | Samples=8000 | Total=4.77s (Rollout=4.16s, Train=0.60s) | Thrpt=1678.5/s | Compile=None
+[NONE] Epoch   9 | Reward=0.00 | Samples=8000 | Total=4.73s (Rollout=4.11s, Train=0.63s) | Thrpt=1689.9/s | Compile=None
+[NONE] Epoch  10 | Reward=0.00 | Samples=8000 | Total=4.71s (Rollout=4.08s, Train=0.63s) | Thrpt=1697.4/s | Compile=None
+
+=== Summary (none) ===
+Epochs: 10
+Reward mean (avg over epochs): 0.00
+Total time (avg per epoch): 4.80s
+  Rollout time avg: 4.14s | Train time avg: 0.66s
+Throughput (avg samples/s): 1668.6
+Compile latency: N/A

@@ -1,74 +1,96 @@
-# path: main.py
+import os
 
 import ray
+import torch
+from datetime import datetime
 from ray.rllib.algorithms.ppo import PPOConfig
 
 from framework.trainer import Trainer
-from framework.policy_manager import CompileMode
 from compression.compile_compressor import CompileCompressor
+from config import DEFAULT_HPARAMS, EXPERIMENTS
+
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*Custom ModelV2.*")
+warnings.filterwarnings("ignore", message=".*Install gputil.*")
+warnings.filterwarnings("ignore", message=".*remote_workers.*")
 
 # 注册全局模型
 from models.policy import CustomPolicyNet    # noqa
 
 
-if __name__ == "__main__":
+def resolve_device(config_device: str):
+    requested = os.environ.get("ACCEL_DEVICE", config_device)
+    normalized = requested.lower()
+    if normalized.startswith("cuda") and not torch.cuda.is_available():
+        print(f"[main] ⚠️ Requested device '{requested}' unavailable, fallback to CPU.")
+        return "cpu"
+    return normalized if normalized.startswith("cuda") or normalized == "cpu" else requested
 
-    # ------------------------------------------------------------
-    # 初始化 Ray
-    # ------------------------------------------------------------
-    ray.init(include_dashboard=False)
 
-    hidden_dim = 1024
-    hidden_depth = 8
-    hidden_layers = [hidden_dim] * hidden_depth
-    compile_training_backbone = False  # 设置为 True 可同步编译训练 backbone
-
-    # ------------------------------------------------------------
-    # RLlib 配置
-    # ------------------------------------------------------------
-    config = (
+def build_config(hidden_layers, device: str, hparams):
+    use_gpu = device.startswith("cuda") and torch.cuda.is_available()
+    return (
         PPOConfig()
-        .environment("CartPole-v1")
+        .environment(hparams["env_id"])
         .framework("torch")
+        .resources(num_gpus=1 if use_gpu else 0)
         .training(
             model={
                 "custom_model": "custom_policy",
                 "fcnet_hiddens": hidden_layers,
-                "custom_model_config": {"use_residual": True},
+                "custom_model_config": {
+                    "use_residual": hparams["use_residual"],
+                    "device": device,
+                },
             },
-            train_batch_size=80000,
-            lr=1e-4,
+            train_batch_size=hparams["train_batch_size"],
+            lr=hparams["lr"],
         )
-        .rollouts(num_rollout_workers=4, rollout_fragment_length=20000)
+        .rollouts(
+            num_rollout_workers=hparams["num_rollout_workers"],
+            rollout_fragment_length=hparams["rollout_fragment_length"],
+        )
     )
 
-    # ------------------------------------------------------------
-    # 设置压缩器（你也可以加入 QuantCompressor, PruneCompressor）
-    # ------------------------------------------------------------
-    compressors = [
-        CompileCompressor(backend="inductor", diff_threshold=1e-4),
-    ]
 
-    # ------------------------------------------------------------
-    # 创建训练器（同步 OR 异步）
-    # ------------------------------------------------------------
-    trainer = Trainer(
-        config=config,
-        compressors=compressors,
-        compile_mode=CompileMode.NONE,   # 可改 SYNC / NONE / ASYNC
-        trigger_every=1,                 # 固定周期触发
-        enable_diff_check=False,         # 启用差分检查
-        compile_training_backbone=compile_training_backbone,
-        log_dir="logs"
-    )
+if __name__ == "__main__":
 
-    # ------------------------------------------------------------
-    # 运行训练
-    # ------------------------------------------------------------
-    trainer.run(num_epochs=10)
-    trainer.summary()
+    ray.init(include_dashboard=False)
 
-    # ------------------------------------------------------------
-    # 关闭 Ray
-    # ------------------------------------------------------------
+    hparams = DEFAULT_HPARAMS
+    device = resolve_device(hparams["device"])
+    print(f"[main] Using device: {device}")
+
+    hidden_layers = [hparams["hidden_dim"]] * hparams["hidden_depth"]
+
+    for exp in EXPERIMENTS:
+        print(f"\n========== Running {exp['name']} ({exp['mode'].value}) ==========")
+        config = build_config(hidden_layers, device, hparams)
+        compressors = [
+            CompileCompressor(
+                backend=hparams["compile_backend"],
+                diff_threshold=hparams["compile_diff_threshold"],
+                device=device,
+            ),
+        ]
+        trainer = Trainer(
+            config=config,
+            compressors=compressors,
+            compile_mode=exp["mode"],
+            trigger_every=exp.get("trigger_every", 0),
+            enable_diff_check=exp.get("enable_diff_check", True),
+            compile_training_backbone=exp["compile_training_backbone"],
+            log_dir=os.path.join("logs", exp["name"]),
+            device=device,
+            wandb_enabled=hparams.get("use_wandb", False),
+            wandb_project=hparams.get("wandb_project"),
+            wandb_run_name=f"{exp['name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            wandb_config={"experiment": exp["name"], "env_id": hparams["env_id"]},
+            async_warmup=exp.get("async_warmup", False),
+        )
+        trainer.run(num_epochs=hparams["num_epochs"])
+        trainer.summary()
+
     ray.shutdown()

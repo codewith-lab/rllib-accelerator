@@ -1,0 +1,1 @@
+{"_step":10,"_wandb":{"runtime":58},"epoch":10,"compile_latency":0.0015370845794677734,"_runtime":58.164032614,"_timestamp":1.764800927809167e+09,"total_time":4.9975996017456055,"rollout_time":4.233850002288818,"reward_mean":0,"train_time":0.7590861320495605,"throughput":1600.7684963808804}

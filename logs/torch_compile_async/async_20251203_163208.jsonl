@@ -1,0 +1,10 @@
+{"epoch": 1, "reward_mean": 0.0, "total_time": 1.459364652633667, "rollout_time": 1.4476375579833984, "train_time": 0.010977029800415039, "throughput": 5481.837582925326, "compile_latency": null}
+{"epoch": 2, "reward_mean": 0.0, "total_time": 1.4574720859527588, "rollout_time": 1.4385392665863037, "train_time": 0.018488645553588867, "throughput": 5488.955896380237, "compile_latency": null}
+{"epoch": 3, "reward_mean": 0.0, "total_time": 9.0015549659729, "rollout_time": 8.989206790924072, "train_time": 0.011784553527832031, "throughput": 888.7353385321853, "compile_latency": 0.0012514591217041016}
+{"epoch": 4, "reward_mean": 0.0, "total_time": 1.492750883102417, "rollout_time": 1.4802098274230957, "train_time": 0.01210784912109375, "throughput": 5359.233138334123, "compile_latency": 0.0001323223114013672}
+{"epoch": 5, "reward_mean": 0.0, "total_time": 1.4646694660186768, "rollout_time": 1.4537453651428223, "train_time": 0.010643720626831055, "throughput": 5461.983188429483, "compile_latency": null}
+{"epoch": 6, "reward_mean": 0.0, "total_time": 1.4679629802703857, "rollout_time": 1.4557795524597168, "train_time": 0.011788129806518555, "throughput": 5449.728710819718, "compile_latency": null}
+{"epoch": 7, "reward_mean": 0.0, "total_time": 1.4691722393035889, "rollout_time": 1.4561212062835693, "train_time": 0.01167917251586914, "throughput": 5445.243100830797, "compile_latency": 0.00021123886108398438}
+{"epoch": 8, "reward_mean": 0.0, "total_time": 1.4783833026885986, "rollout_time": 1.4634294509887695, "train_time": 0.014549016952514648, "throughput": 5411.316527622534, "compile_latency": null}
+{"epoch": 9, "reward_mean": 0.0, "total_time": 1.4597101211547852, "rollout_time": 1.448714017868042, "train_time": 0.010353565216064453, "throughput": 5480.540200455111, "compile_latency": 0.00016188621520996094}
+{"epoch": 10, "reward_mean": 0.0, "total_time": 1.477828025817871, "rollout_time": 1.4494712352752686, "train_time": 0.027866363525390625, "throughput": 5413.349767522901, "compile_latency": 0.00013899803161621094}

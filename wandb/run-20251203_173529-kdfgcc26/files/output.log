@@ -1,0 +1,23 @@
+2025-12-03 17:35:30,000	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[ASYNC] Epoch   1 | Reward=0.00 | Samples=8000 | Total=9.11s (Rollout=5.40s, Train=3.70s) | Thrpt=878.1/s | Compile=None
+[ASYNC] Epoch   2 | Reward=0.00 | Samples=8000 | Total=5.12s (Rollout=4.32s, Train=0.80s) | Thrpt=1561.5/s | Compile=None
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[36m(RolloutWorker pid=83693)[0m W1203 17:35:46.301000 83693 site-packages/torch/utils/cpp_extension.py:118] [0/0] No CUDA runtime is found, using CUDA_HOME='/usr'
+[36m(RolloutWorker pid=83691)[0m 2025-12-03 17:35:25,104	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 3x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/ray-logging.html#log-deduplication for more options.)[0m
+[ASYNC] Epoch   3 | Reward=0.00 | Samples=8000 | Total=11.94s (Rollout=11.28s, Train=0.65s) | Thrpt=669.9/s | Compile=0.0015530586242675781
+[ASYNC] Epoch   4 | Reward=0.00 | Samples=8000 | Total=5.06s (Rollout=4.39s, Train=0.67s) | Thrpt=1579.7/s | Compile=None
+[ASYNC] Epoch   5 | Reward=0.00 | Samples=8000 | Total=5.08s (Rollout=4.39s, Train=0.69s) | Thrpt=1573.6/s | Compile=None
+[ASYNC] Epoch   6 | Reward=0.00 | Samples=8000 | Total=5.00s (Rollout=4.37s, Train=0.63s) | Thrpt=1598.5/s | Compile=None
+[ASYNC] Epoch   7 | Reward=0.00 | Samples=8000 | Total=5.06s (Rollout=4.38s, Train=0.67s) | Thrpt=1580.7/s | Compile=None
+[ASYNC] Epoch   8 | Reward=0.00 | Samples=8000 | Total=5.04s (Rollout=4.37s, Train=0.63s) | Thrpt=1588.8/s | Compile=None
+[ASYNC] Epoch   9 | Reward=0.00 | Samples=8000 | Total=4.99s (Rollout=4.34s, Train=0.65s) | Thrpt=1601.8/s | Compile=None
+[ASYNC] Epoch  10 | Reward=0.00 | Samples=8000 | Total=5.03s (Rollout=4.36s, Train=0.66s) | Thrpt=1591.2/s | Compile=None
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 0.00
+Total time (avg per epoch): 6.14s
+  Rollout time avg: 5.16s | Train time avg: 0.97s
+Throughput (avg samples/s): 1422.4
+Compile latency (avg when available): 0.002s
