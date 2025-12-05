@@ -1,0 +1,82 @@
+2025-12-05 11:08:09,191	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[NONE] Epoch   1 | Reward=20.68 | Samples=2000 | Total=4.39s (Rollout=3.74s, Train=0.66s) | Thrpt=455.3/s | Compile=None | Swap=None | Infer=3.312s | Env=0.425s
+Traceback (most recent call last):
+  File "/home/mhm/workspace/rllib-accelerator/main.py", line 168, in <module>
+    trainer.run(num_epochs=hparams["num_epochs"])
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 225, in run
+    self.train_epoch(e)
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 147, in train_epoch
+    result = self.algo.workers.local_worker().learn_on_batch(train_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/evaluation/rollout_worker.py", line 815, in learn_on_batch
+    info_out[pid] = policy.learn_on_batch(batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/utils/threading.py", line 24, in wrapper
+    return func(self, *a, **k)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 730, in learn_on_batch
+    grads, fetches = self.compute_gradients(postprocessed_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/utils/threading.py", line 24, in wrapper
+    return func(self, *a, **k)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 946, in compute_gradients
+    tower_outputs = self._multi_gpu_parallel_grad_calc([postprocessed_batch])
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 1450, in _multi_gpu_parallel_grad_calc
+    _worker(shard_idx, model, sample_batch, device)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 1369, in _worker
+    self.loss(model, self.dist_class, sample_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/algorithms/ppo/ppo_torch_policy.py", line 84, in loss
+    logits, state = model(train_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/models/modelv2.py", line 263, in __call__
+    res = self.forward(restored, state or [], seq_lens)
+  File "/home/mhm/workspace/rllib-accelerator/models/policy.py", line 127, in forward
+    logits, value = bb(obs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/mhm/workspace/rllib-accelerator/models/policy.py", line 46, in forward
+    x = F.relu(layer(x))
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/mhm/workspace/rllib-accelerator/main.py", line 168, in <module>
+    trainer.run(num_epochs=hparams["num_epochs"])
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 225, in run
+    self.train_epoch(e)
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 147, in train_epoch
+    result = self.algo.workers.local_worker().learn_on_batch(train_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/evaluation/rollout_worker.py", line 815, in learn_on_batch
+    info_out[pid] = policy.learn_on_batch(batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/utils/threading.py", line 24, in wrapper
+    return func(self, *a, **k)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 730, in learn_on_batch
+    grads, fetches = self.compute_gradients(postprocessed_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/utils/threading.py", line 24, in wrapper
+    return func(self, *a, **k)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 946, in compute_gradients
+    tower_outputs = self._multi_gpu_parallel_grad_calc([postprocessed_batch])
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 1450, in _multi_gpu_parallel_grad_calc
+    _worker(shard_idx, model, sample_batch, device)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/policy/torch_policy_v2.py", line 1369, in _worker
+    self.loss(model, self.dist_class, sample_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/algorithms/ppo/ppo_torch_policy.py", line 84, in loss
+    logits, state = model(train_batch)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/rllib/models/modelv2.py", line 263, in __call__
+    res = self.forward(restored, state or [], seq_lens)
+  File "/home/mhm/workspace/rllib-accelerator/models/policy.py", line 127, in forward
+    logits, value = bb(obs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/mhm/workspace/rllib-accelerator/models/policy.py", line 46, in forward
+    x = F.relu(layer(x))
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+KeyboardInterrupt

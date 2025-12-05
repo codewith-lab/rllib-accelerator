@@ -1,0 +1,12 @@
+{"time":"2025-12-04T16:50:50.484508572-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.1"}
+{"time":"2025-12-04T16:50:50.740157047-05:00","level":"INFO","msg":"stream: created new stream","id":"nsvkygwc"}
+{"time":"2025-12-04T16:50:50.740560604-05:00","level":"INFO","msg":"handler: started","stream_id":"nsvkygwc"}
+{"time":"2025-12-04T16:50:50.74066287-05:00","level":"INFO","msg":"stream: started","id":"nsvkygwc"}
+{"time":"2025-12-04T16:50:50.740687326-05:00","level":"INFO","msg":"writer: started","stream_id":"nsvkygwc"}
+{"time":"2025-12-04T16:50:50.740704317-05:00","level":"INFO","msg":"sender: started","stream_id":"nsvkygwc"}
+{"time":"2025-12-04T16:51:42.738974317-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-04T16:51:42.890943177-05:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-12-04T16:51:42.894630571-05:00","level":"INFO","msg":"stream: closing","id":"nsvkygwc"}
+{"time":"2025-12-04T16:51:42.894666501-05:00","level":"INFO","msg":"handler: closed","stream_id":"nsvkygwc"}
+{"time":"2025-12-04T16:51:42.894712792-05:00","level":"INFO","msg":"sender: closed","stream_id":"nsvkygwc"}
+{"time":"2025-12-04T16:51:42.894719302-05:00","level":"INFO","msg":"stream: closed","id":"nsvkygwc"}

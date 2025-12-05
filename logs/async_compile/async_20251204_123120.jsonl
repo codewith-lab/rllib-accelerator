@@ -1,0 +1,2 @@
+{"epoch": 1, "reward_mean": 0.0, "total_time": 8.20901346206665, "rollout_time": 4.16559362411499, "train_time": 4.025388479232788, "throughput": 974.5385407110746, "compile_latency": null, "inference_time": 2.6394372122574623, "env_time": 1.526156411857528}
+{"epoch": 2, "reward_mean": 0.0, "total_time": 4.926535367965698, "rollout_time": 4.1757330894470215, "train_time": 0.7445287704467773, "throughput": 1623.8592443726675, "compile_latency": null, "inference_time": 2.6194619385037186, "env_time": 1.556271150943303}

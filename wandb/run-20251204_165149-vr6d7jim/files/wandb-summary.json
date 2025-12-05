@@ -1,0 +1,1 @@
+{"env_time":0.6078626929756865,"epoch":10,"compile_latency":0.009861230850219727,"_step":10,"total_time":5.9721293449401855,"_runtime":84.366553167,"_wandb":{"runtime":84},"train_time":1.5222477912902832,"_timestamp":1.7648851941667492e+09,"rollout_time":4.441087245941162,"reward_mean":71.92307692307692,"throughput":334.8889289704477,"inference_time":3.8332245529654756}

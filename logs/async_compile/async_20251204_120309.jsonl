@@ -1,0 +1,1 @@
+{"epoch": 1, "reward_mean": 0.0, "total_time": 10.485199689865112, "rollout_time": 3.8807919025421143, "train_time": 6.600840330123901, "throughput": 762.9802232314869, "compile_latency": null, "inference_time": 2.4158882800068113, "env_time": 1.464903622535303}

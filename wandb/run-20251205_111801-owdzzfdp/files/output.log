@@ -1,0 +1,22 @@
+[ASYNC] Epoch   1 | Reward=20.68 | Samples=2000 | Total=7.09s (Rollout=3.87s, Train=3.20s) | Thrpt=281.9/s | Compile=None | Swap=None | Infer=3.401s | Env=0.473s
+[ASYNC] Epoch   2 | Reward=10.36 | Samples=2000 | Total=4.39s (Rollout=3.83s, Train=0.55s) | Thrpt=455.8/s | Compile=None | Swap=None | Infer=3.295s | Env=0.531s
+[36m(RolloutWorker pid=31190)[0m W1205 11:18:15.018000 31190 site-packages/torch/utils/cpp_extension.py:118] [0/0] No CUDA runtime is found, using CUDA_HOME='/usr'
+[36m(RolloutWorker pid=31191)[0m 2025-12-05 11:17:59,008	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 3x across cluster][0m
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   3 | Reward=9.91 | Samples=2000 | Total=5.64s (Rollout=3.97s, Train=1.66s) | Thrpt=354.6/s | Compile=0.002047300338745117 | Swap=7.774950742721558 | Infer=3.454s | Env=0.512s
+[ASYNC] Epoch   4 | Reward=9.87 | Samples=2000 | Total=5.00s (Rollout=3.92s, Train=1.07s) | Thrpt=400.3/s | Compile=0.08558487892150879 | Swap=2.362891674041748 | Infer=3.381s | Env=0.537s
+[ASYNC] Epoch   5 | Reward=10.03 | Samples=2000 | Total=4.89s (Rollout=3.77s, Train=1.12s) | Thrpt=408.6/s | Compile=0.05785679817199707 | Swap=1.2555618286132812 | Infer=3.255s | Env=0.514s
+[ASYNC] Epoch   6 | Reward=10.01 | Samples=2000 | Total=4.85s (Rollout=3.85s, Train=0.99s) | Thrpt=412.7/s | Compile=0.06837916374206543 | Swap=1.2993214130401611 | Infer=3.330s | Env=0.520s
+[ASYNC] Epoch   7 | Reward=9.79 | Samples=2000 | Total=4.98s (Rollout=3.88s, Train=1.09s) | Thrpt=402.0/s | Compile=0.026695728302001953 | Swap=1.4484179019927979 | Infer=3.354s | Env=0.526s
+[ASYNC] Epoch   8 | Reward=9.81 | Samples=2000 | Total=4.89s (Rollout=3.88s, Train=1.00s) | Thrpt=409.4/s | Compile=0.0351252555847168 | Swap=1.1615452766418457 | Infer=3.336s | Env=0.541s
+[ASYNC] Epoch   9 | Reward=9.93 | Samples=2000 | Total=4.86s (Rollout=3.75s, Train=1.10s) | Thrpt=411.3/s | Compile=0.04541516304016113 | Swap=1.1662476062774658 | Infer=3.251s | Env=0.504s
+[ASYNC] Epoch  10 | Reward=9.90 | Samples=2000 | Total=4.86s (Rollout=3.79s, Train=1.06s) | Thrpt=411.6/s | Compile=0.05012345314025879 | Swap=1.2513055801391602 | Infer=3.270s | Env=0.519s
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 11.03
+Total time (avg per epoch): 5.14s
+  Rollout time avg: 3.85s | Train time avg: 1.28s
+Throughput (avg samples/s): 394.8
+Compile latency (avg when available): 0.046s

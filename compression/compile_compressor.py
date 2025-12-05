@@ -33,6 +33,7 @@ class CompileCompressor(BaseCompressor):
         self.backend = backend
         self.diff_threshold = diff_threshold
         self.device_str = device
+        self.supports_weight_sync = True
         if torch is not None:
             try:
                 resolved = torch.device(device)

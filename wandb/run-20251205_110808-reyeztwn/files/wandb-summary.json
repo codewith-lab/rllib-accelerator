@@ -1,0 +1,1 @@
+{"epoch":1,"total_time":4.392678737640381,"rollout_time":3.737377643585205,"reward_mean":20.677419354838708,"inference_time":3.3123624202483484,"_wandb":{"runtime":8},"env_time":0.4250152233368567,"_step":1,"throughput":455.3030438721184,"_timestamp":1.7649508935967152e+09,"_runtime":8.153031205,"train_time":0.6552941799163818}

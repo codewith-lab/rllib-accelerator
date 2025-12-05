@@ -1,0 +1,1 @@
+{"throughput":400.41610088761536,"env_time":0.5549602369892455,"train_time":0.6696794033050537,"_timestamp":1.764885102275711e+09,"_runtime":51.210179327,"_step":10,"epoch":10,"reward_mean":41.87234042553192,"inference_time":3.7701523442638063,"rollout_time":4.325112581253052,"_wandb":{"runtime":51},"total_time":4.99480414390564}

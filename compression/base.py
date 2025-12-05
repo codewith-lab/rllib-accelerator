@@ -17,6 +17,10 @@ class BaseCompressor(abc.ABC):
     - compress(): 执行实际的压缩行为
     """
 
+    # 标记该压缩器的结果是否支持单纯通过更新 state_dict
+    # 来同步推理侧的权重（例如 torch.compile 后的模型）。
+    supports_weight_sync: bool = False
+
     @abc.abstractmethod
     def snapshot(self, train_model: Any) -> Any:
         """从训练模型抽取 snapshot（通常是 state_dict 的某种复制）。
@@ -44,4 +48,3 @@ class BaseCompressor(abc.ABC):
             meta: 字典，记录 latency、压缩类型等额外信息
         """
         raise NotImplementedError
-

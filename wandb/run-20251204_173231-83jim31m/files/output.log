@@ -1,0 +1,19 @@
+2025-12-04 17:32:32,368	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[NONE] Epoch   1 | Reward=12.09 | Samples=2000 | Total=19.90s (Rollout=17.10s, Train=2.81s) | Thrpt=100.5/s | Compile=None | Infer=16.333s | Env=0.763s
+[NONE] Epoch   2 | Reward=9.47 | Samples=2000 | Total=19.48s (Rollout=17.06s, Train=2.41s) | Thrpt=102.7/s | Compile=None | Infer=16.033s | Env=1.032s
+[NONE] Epoch   3 | Reward=9.28 | Samples=2000 | Total=19.37s (Rollout=17.04s, Train=2.32s) | Thrpt=103.3/s | Compile=None | Infer=16.021s | Env=1.020s
+[NONE] Epoch   4 | Reward=9.34 | Samples=2000 | Total=19.40s (Rollout=17.08s, Train=2.32s) | Thrpt=103.1/s | Compile=None | Infer=16.099s | Env=0.978s
+[NONE] Epoch   5 | Reward=9.40 | Samples=2000 | Total=19.34s (Rollout=17.05s, Train=2.30s) | Thrpt=103.4/s | Compile=None | Infer=16.074s | Env=0.973s
+[NONE] Epoch   6 | Reward=9.29 | Samples=2000 | Total=19.37s (Rollout=17.02s, Train=2.35s) | Thrpt=103.2/s | Compile=None | Infer=16.035s | Env=0.990s
+[NONE] Epoch   7 | Reward=9.28 | Samples=2000 | Total=19.40s (Rollout=17.08s, Train=2.32s) | Thrpt=103.1/s | Compile=None | Infer=16.054s | Env=1.025s
+[NONE] Epoch   8 | Reward=9.33 | Samples=2000 | Total=19.33s (Rollout=17.07s, Train=2.27s) | Thrpt=103.5/s | Compile=None | Infer=16.056s | Env=1.010s
+[NONE] Epoch   9 | Reward=9.32 | Samples=2000 | Total=19.28s (Rollout=17.02s, Train=2.26s) | Thrpt=103.8/s | Compile=None | Infer=16.021s | Env=0.998s
+[NONE] Epoch  10 | Reward=9.37 | Samples=2000 | Total=19.32s (Rollout=17.04s, Train=2.28s) | Thrpt=103.5/s | Compile=None | Infer=16.044s | Env=0.999s
+
+=== Summary (none) ===
+Epochs: 10
+Reward mean (avg over epochs): 9.62
+Total time (avg per epoch): 19.42s
+  Rollout time avg: 17.06s | Train time avg: 2.36s
+Throughput (avg samples/s): 103.0
+Compile latency: N/A

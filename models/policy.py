@@ -94,7 +94,7 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         self.backbone = PolicyBackbone(in_dim, num_outputs, hidden_dims, use_residual).to(self.device)
 
         # === 可选：压缩后的推理 backbone（由 PolicyManager 注入）===
-        self.compiled_backbone = None
+        self.__dict__["_compiled_backbone"] = None
         self.use_compiled = False
 
         # value_function 输出缓存
@@ -113,11 +113,8 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
             obs = obs.float()
 
         # 选择训练 or 推理 backbone
-        bb = (
-            self.compiled_backbone
-            if (self.use_compiled and self.compiled_backbone is not None)
-            else self.backbone
-        )
+        compiled_bb = getattr(self, "_compiled_backbone", None)
+        bb = compiled_bb if (self.use_compiled and compiled_bb is not None) else self.backbone
         t0 = time.perf_counter()
         if bb is not None:
             # 将观测移动到 backbone 所在设备，避免 CPU/GPU 混用
@@ -144,23 +141,44 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
     # ------------------------------------------------------------
     def set_compiled_backbone(self, compiled_bb: nn.Module):
         """在 sampler worker 上切换推理 backbone。"""
-        self.compiled_backbone = compiled_bb
+        if "compiled_backbone" in self._modules:
+            self._modules.pop("compiled_backbone")
+        self.__dict__["_compiled_backbone"] = compiled_bb
         self.use_compiled = (compiled_bb is not None)
 
     def warmup_compiled_backbone(self, batch_size: int = 32):
         """通过一次 dummy 前向触发 torch.compile 的图捕获，避免首轮延迟。"""
-        if not self.use_compiled or self.compiled_backbone is None:
+        compiled_bb = getattr(self, "_compiled_backbone", None)
+        if not self.use_compiled or compiled_bb is None:
             return
         in_dim = getattr(self, "in_dim", None)
         if in_dim is None:
             return
         try:
-            device = next(self.compiled_backbone.parameters()).device
+            device = next(compiled_bb.parameters()).device
         except StopIteration:
             device = self.device
         dummy_obs = torch.randn(batch_size, in_dim, device=device)
         with torch.no_grad():
-            self.compiled_backbone(dummy_obs)
+            compiled_bb(dummy_obs)
+
+    def update_compiled_backbone_weights(self, state_dict):
+        compiled_bb = getattr(self, "_compiled_backbone", None)
+        if compiled_bb is None or state_dict is None:
+            return
+        target = getattr(compiled_bb, "_orig_mod", compiled_bb)
+        params = list(target.parameters())
+        if params:
+            device = params[0].device
+        else:
+            device = self.device
+        converted = {}
+        for k, v in state_dict.items():
+            if torch.is_tensor(v):
+                converted[k] = v.to(device)
+            else:
+                converted[k] = v
+        target.load_state_dict(converted, strict=False)
 
     def consume_inference_time(self) -> float:
         total = self._inference_time_accum
@@ -179,7 +197,6 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
     def load_state_dict(self, state_dict, strict=True):
         filtered = self._remove_compiled_backbone(state_dict)
         adjusted = self._apply_compiled_prefix(filtered)
-        adjusted = self._ensure_compiled_weights(adjusted)
         return super().load_state_dict(adjusted, strict=strict)
 
     @staticmethod
@@ -203,8 +220,7 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         if state is None:
             return state
         compiled_prefix = "compiled_backbone."
-        if not any(k.startswith(compiled_prefix) for k in state.keys()):
-            return state
+        # always filter out compiled_backbone keys so policy state_dict stays clean
         cleaned = state.__class__()
         for k, v in state.items():
             if k.startswith(compiled_prefix):
@@ -216,34 +232,16 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         if state is None:
             return state
         needs_prefix = hasattr(self.backbone, "_orig_mod")
-        if not needs_prefix:
-            return state
         compiled_prefix = "backbone._orig_mod."
         plain_prefix = "backbone."
         adjusted = state.__class__()
         for k, v in state.items():
-            if k.startswith(plain_prefix):
+            if k.startswith(plain_prefix) and needs_prefix:
                 new_key = compiled_prefix + k[len(plain_prefix):]
                 adjusted[new_key] = v
             else:
                 adjusted[k] = v
         return adjusted
-
-    def _ensure_compiled_weights(self, state):
-        if state is None:
-            return state
-        prefix = "compiled_backbone"
-        if any(k.startswith(prefix) for k in state.keys()):
-            return state
-        compiled = getattr(self, "compiled_backbone", None)
-        if compiled is None:
-            return state
-        compiled_state = compiled.state_dict()
-        container = state.__class__()
-        container.update(state)
-        for k, v in compiled_state.items():
-            container[f"{prefix}.{k}"] = v
-        return container
 
 
 # 注册 RLlib model

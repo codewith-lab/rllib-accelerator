@@ -1,0 +1,23 @@
+[ASYNC] Epoch   1 | Reward=20.68 | Samples=2000 | Total=5.39s (Rollout=4.76s, Train=0.61s) | Thrpt=370.8/s | Compile=None | Swap=None | Infer=3.518s | Env=1.240s
+[ASYNC] Epoch   2 | Reward=10.36 | Samples=2000 | Total=4.65s (Rollout=4.02s, Train=0.61s) | Thrpt=430.3/s | Compile=None | Swap=None | Infer=3.482s | Env=0.533s
+[36m(RolloutWorker pid=25071)[0m /home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/_utils.py:444: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+[36m(RolloutWorker pid=25071)[0m   device=storage.device,
+[36m(RolloutWorker pid=25072)[0m 2025-12-05 11:10:43,103	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 2x across cluster][0m
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   3 | Reward=9.78 | Samples=2000 | Total=1.34s (Rollout=0.81s, Train=0.52s) | Thrpt=1489.2/s | Compile=0.2131807804107666 | Swap=0.4859886169433594 | Infer=0.438s | Env=0.372s
+[ASYNC] Epoch   4 | Reward=9.74 | Samples=2000 | Total=1.37s (Rollout=0.82s, Train=0.54s) | Thrpt=1456.7/s | Compile=None | Swap=None | Infer=0.444s | Env=0.375s
+[ASYNC] Epoch   5 | Reward=9.93 | Samples=2000 | Total=1.48s (Rollout=0.84s, Train=0.62s) | Thrpt=1347.0/s | Compile=None | Swap=None | Infer=0.467s | Env=0.378s
+[ASYNC] Epoch   6 | Reward=9.81 | Samples=2000 | Total=1.47s (Rollout=0.83s, Train=0.62s) | Thrpt=1361.1/s | Compile=None | Swap=None | Infer=0.450s | Env=0.382s
+[ASYNC] Epoch   7 | Reward=9.71 | Samples=2000 | Total=1.51s (Rollout=0.92s, Train=0.57s) | Thrpt=1325.4/s | Compile=None | Swap=None | Infer=0.507s | Env=0.409s
+[ASYNC] Epoch   8 | Reward=9.76 | Samples=2000 | Total=1.57s (Rollout=0.91s, Train=0.64s) | Thrpt=1272.8/s | Compile=None | Swap=None | Infer=0.497s | Env=0.410s
+[ASYNC] Epoch   9 | Reward=9.84 | Samples=2000 | Total=1.41s (Rollout=0.86s, Train=0.53s) | Thrpt=1420.8/s | Compile=None | Swap=None | Infer=0.473s | Env=0.390s
+[ASYNC] Epoch  10 | Reward=9.77 | Samples=2000 | Total=1.44s (Rollout=0.87s, Train=0.55s) | Thrpt=1391.4/s | Compile=None | Swap=None | Infer=0.475s | Env=0.399s
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 10.94
+Total time (avg per epoch): 2.16s
+  Rollout time avg: 1.56s | Train time avg: 0.58s
+Throughput (avg samples/s): 1186.5
+Compile latency (avg when available): 0.213s

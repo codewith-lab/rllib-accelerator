@@ -1,0 +1,19 @@
+2025-12-05 11:03:11,936	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[NONE] Epoch   1 | Reward=13.90 | Samples=2000 | Total=1.30s (Rollout=1.07s, Train=0.23s) | Thrpt=1533.8/s | Compile=None | Infer=0.660s | Env=0.409s
+[NONE] Epoch   2 | Reward=17.86 | Samples=2000 | Total=1.25s (Rollout=1.06s, Train=0.20s) | Thrpt=1595.6/s | Compile=None | Infer=0.640s | Env=0.417s
+[NONE] Epoch   3 | Reward=25.87 | Samples=2000 | Total=1.23s (Rollout=1.06s, Train=0.17s) | Thrpt=1630.2/s | Compile=None | Infer=0.649s | Env=0.406s
+[NONE] Epoch   4 | Reward=43.46 | Samples=2000 | Total=1.23s (Rollout=1.05s, Train=0.17s) | Thrpt=1632.1/s | Compile=None | Infer=0.641s | Env=0.410s
+[NONE] Epoch   5 | Reward=47.56 | Samples=2000 | Total=1.21s (Rollout=1.04s, Train=0.17s) | Thrpt=1658.5/s | Compile=None | Infer=0.637s | Env=0.402s
+[NONE] Epoch   6 | Reward=63.74 | Samples=2000 | Total=1.20s (Rollout=1.03s, Train=0.16s) | Thrpt=1669.5/s | Compile=None | Infer=0.641s | Env=0.393s
+[NONE] Epoch   7 | Reward=52.64 | Samples=2000 | Total=1.21s (Rollout=1.04s, Train=0.17s) | Thrpt=1655.1/s | Compile=None | Infer=0.641s | Env=0.397s
+[NONE] Epoch   8 | Reward=68.61 | Samples=2000 | Total=2.27s (Rollout=1.04s, Train=1.23s) | Thrpt=879.9/s | Compile=None | Infer=0.641s | Env=0.397s
+[NONE] Epoch   9 | Reward=74.78 | Samples=2000 | Total=1.21s (Rollout=1.03s, Train=0.18s) | Thrpt=1649.9/s | Compile=None | Infer=0.639s | Env=0.395s
+[NONE] Epoch  10 | Reward=80.04 | Samples=2000 | Total=1.21s (Rollout=1.03s, Train=0.17s) | Thrpt=1658.5/s | Compile=None | Infer=0.637s | Env=0.398s
+
+=== Summary (none) ===
+Epochs: 10
+Reward mean (avg over epochs): 48.85
+Total time (avg per epoch): 1.33s
+  Rollout time avg: 1.04s | Train time avg: 0.29s
+Throughput (avg samples/s): 1556.3
+Compile latency: N/A

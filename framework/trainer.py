@@ -6,9 +6,11 @@ import time
 from datetime import datetime
 from typing import List
 
+import numpy as np
 import ray
+import torch
 from ray.rllib.algorithms.ppo import PPOConfig
-from ray.rllib.policy.sample_batch import concat_samples
+from ray.rllib.policy.sample_batch import concat_samples, SampleBatch, MultiAgentBatch
 
 from compression.base import BaseCompressor
 from framework.policy_manager import PolicyManager, CompileMode
@@ -32,6 +34,7 @@ class Trainer:
                  compile_training_backbone=False,
                  log_dir="logs",
                  device: str = "cpu",
+                 infer_output_index: int = 0,
                  wandb_enabled: bool = False,
                  wandb_project: str = None,
                  wandb_run_name: str = None,
@@ -50,6 +53,7 @@ class Trainer:
             enable_diff_check=enable_diff_check,
             compile_training_backbone=compile_training_backbone,
             device=device,
+            infer_output_index=infer_output_index,
             async_warmup=async_warmup,
         )
 
@@ -62,6 +66,7 @@ class Trainer:
         self.stats = []
         self.compile_mode = compile_mode
         self.device = device
+        self._pending_episode_rewards = {}
 
         self.wandb_run = None
         if wandb_enabled and wandb_project:
@@ -74,9 +79,16 @@ class Trainer:
                     "trigger_every": trigger_every,
                     "enable_diff_check": enable_diff_check,
                 }
+                group = None
                 if wandb_config:
+                    group = wandb_config.pop("group", None)
                     cfg.update(wandb_config)
-                self.wandb_run = wandb.init(project=wandb_project, name=run_name, config=cfg)
+                self.wandb_run = wandb.init(
+                    project=wandb_project,
+                    name=run_name,
+                    config=cfg,
+                    group=group,
+                )
                 self._wandb = wandb
             except ImportError:
                 print("[Trainer] ⚠️ 未检测到 wandb，跳过云端日志。")
@@ -121,6 +133,7 @@ class Trainer:
             samples = ray.get([w.sample.remote() for w in workers])
         else:
             samples = [self.algo.workers.local_worker().sample()]
+        rollout_reward_mean = self._estimate_reward_from_batches(samples)
         train_batch = concat_samples(samples)
         sample_count = train_batch.count
         t_rollout_end = time.time()
@@ -134,6 +147,8 @@ class Trainer:
             result = self.algo.workers.local_worker().learn_on_batch(train_batch)
             # 训练后立即同步权重，保持 rollout workers on-policy
             self.algo.workers.sync_weights()
+            # 若推理 backbone 支持仅更新权重，则在同步后立即推送最新参数
+            self.manager.push_weight_update()
             t_train_end = time.time()
         train_time = t_train_end - t_train_start
 
@@ -148,6 +163,7 @@ class Trainer:
         # (5) compile stats
         # ==================================================================
         compile_latency = None
+        swap_latency = None
         compressor_name = self.manager.get_infer_compressor_name()
 
         # SYNC → 当前 epoch 编译
@@ -161,18 +177,24 @@ class Trainer:
             info = meta_swap.get(compressor_name)
             if info:
                 compile_latency = info.get("latency")
+            swap_latency = meta_swap.get("SwapLatency")
 
         # ==================================================================
         # (6) log
         # ==================================================================
+        reward_mean = result.get("episode_reward_mean")
+        if reward_mean is None:
+            reward_mean = rollout_reward_mean
+
         rec = {
             "epoch": epoch,
-            "reward_mean": result.get("episode_reward_mean", 0.0),
+            "reward_mean": reward_mean,
             "total_time": step_time,
             "rollout_time": rollout_time,
             "train_time": train_time,
             "throughput": throughput,
             "compile_latency": compile_latency,
+            "swap_latency": swap_latency,
             "inference_time": self._collect_inference_time(),
         }
         avg_infer = rec["inference_time"]
@@ -191,6 +213,7 @@ class Trainer:
             f"(Rollout={rollout_time:.2f}s, Train={train_time:.2f}s) | "
             f"Thrpt={throughput:.1f}/s | "
             f"Compile={compile_latency} | "
+            f"Swap={swap_latency} | "
             f"Infer={rec['inference_time']:.3f}s | Env={rec['env_time']:.3f}s"
         )
 
@@ -240,6 +263,60 @@ class Trainer:
         self.log_file.close()
         if self.wandb_run is not None:
             self.wandb_run.finish()
+
+    def _estimate_reward_from_batches(self, batches) -> float:
+        completed = []
+
+        def accumulate(batch: SampleBatch):
+            if not isinstance(batch, SampleBatch):
+                return
+            if SampleBatch.REWARDS not in batch or SampleBatch.EPS_ID not in batch:
+                return
+
+            rewards = np.asarray(batch[SampleBatch.REWARDS], dtype=np.float32)
+            eps_ids = np.asarray(batch[SampleBatch.EPS_ID], dtype=np.int64)
+
+            # RLlib 2.x no longer guarantees `dones` to be present, instead splitting
+            # the signal into `terminateds`/`truncateds`. Merge them so we always
+            # detect the end of an episode.
+            if SampleBatch.DONES in batch:
+                dones = np.asarray(batch[SampleBatch.DONES], dtype=np.bool_)
+            else:
+                terminateds = batch.get(SampleBatch.TERMINATEDS)
+                truncateds = batch.get(SampleBatch.TRUNCATEDS)
+                if terminateds is None and truncateds is None:
+                    return
+                term = (
+                    np.asarray(terminateds, dtype=np.bool_)
+                    if terminateds is not None else np.zeros_like(rewards, dtype=np.bool_)
+                )
+                trunc = (
+                    np.asarray(truncateds, dtype=np.bool_)
+                    if truncateds is not None else np.zeros_like(rewards, dtype=np.bool_)
+                )
+                dones = np.logical_or(term, trunc)
+
+            for r, done, eps in zip(rewards, dones, eps_ids):
+                acc = self._pending_episode_rewards.get(eps, 0.0)
+                acc += float(r)
+                if done:
+                    completed.append(acc)
+                    self._pending_episode_rewards.pop(eps, None)
+                else:
+                    self._pending_episode_rewards[eps] = acc
+
+        for batch in batches:
+            if isinstance(batch, MultiAgentBatch):
+                for sub_batch in batch.policy_batches.values():
+                    accumulate(sub_batch)
+            else:
+                accumulate(batch)
+
+        if completed:
+            return float(np.mean(completed))
+        if self._pending_episode_rewards:
+            return float(np.mean(list(self._pending_episode_rewards.values())))
+        return 0.0
 
     def _collect_inference_time(self) -> float:
         """汇总 rollout workers（以及无 remote 时的 local worker）的推理耗时。"""

@@ -1,0 +1,19 @@
+2025-12-04 16:50:51,287	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[NONE] Epoch   1 | Reward=20.68 | Samples=2000 | Total=5.26s (Rollout=4.35s, Train=0.91s) | Thrpt=380.1/s | Compile=None | Infer=3.832s | Env=0.517s
+[NONE] Epoch   2 | Reward=10.36 | Samples=2000 | Total=5.08s (Rollout=4.39s, Train=0.69s) | Thrpt=393.4/s | Compile=None | Infer=3.801s | Env=0.589s
+[NONE] Epoch   3 | Reward=9.91 | Samples=2000 | Total=5.05s (Rollout=4.38s, Train=0.67s) | Thrpt=396.0/s | Compile=None | Infer=3.790s | Env=0.588s
+[NONE] Epoch   4 | Reward=10.76 | Samples=2000 | Total=5.08s (Rollout=4.39s, Train=0.70s) | Thrpt=393.5/s | Compile=None | Infer=3.780s | Env=0.607s
+[NONE] Epoch   5 | Reward=12.10 | Samples=2000 | Total=4.99s (Rollout=4.34s, Train=0.64s) | Thrpt=401.2/s | Compile=None | Infer=3.768s | Env=0.575s
+[NONE] Epoch   6 | Reward=16.81 | Samples=2000 | Total=5.06s (Rollout=4.40s, Train=0.66s) | Thrpt=395.4/s | Compile=None | Infer=3.818s | Env=0.582s
+[NONE] Epoch   7 | Reward=26.51 | Samples=2000 | Total=5.03s (Rollout=4.39s, Train=0.63s) | Thrpt=397.7/s | Compile=None | Infer=3.824s | Env=0.570s
+[NONE] Epoch   8 | Reward=76.92 | Samples=2000 | Total=5.27s (Rollout=4.56s, Train=0.70s) | Thrpt=379.8/s | Compile=None | Infer=3.937s | Env=0.626s
+[NONE] Epoch   9 | Reward=40.02 | Samples=2000 | Total=5.05s (Rollout=4.41s, Train=0.65s) | Thrpt=395.7/s | Compile=None | Infer=3.804s | Env=0.602s
+[NONE] Epoch  10 | Reward=41.87 | Samples=2000 | Total=4.99s (Rollout=4.33s, Train=0.67s) | Thrpt=400.4/s | Compile=None | Infer=3.770s | Env=0.555s
+
+=== Summary (none) ===
+Epochs: 10
+Reward mean (avg over epochs): 26.59
+Total time (avg per epoch): 5.09s
+  Rollout time avg: 4.39s | Train time avg: 0.69s
+Throughput (avg samples/s): 393.3
+Compile latency: N/A

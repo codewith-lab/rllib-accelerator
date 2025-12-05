@@ -1,0 +1,1 @@
+{"_step":10,"reward_mean":9.366197183098592,"total_time":19.40878653526306,"rollout_time":17.057358980178833,"env_time":0.9664114057059123,"inference_time":16.09094757447292,"_runtime":195.054793765,"throughput":103.04611245871959,"train_time":2.3514153957366943,"epoch":10,"_wandb":{"runtime":195},"_timestamp":1.76488682871786e+09}

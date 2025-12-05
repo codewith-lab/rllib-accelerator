@@ -1,6 +1,7 @@
 # path: framework/policy_manager.py
 
 import threading
+import time
 import ray
 from typing import Any, Dict, Optional
 
@@ -80,6 +81,9 @@ class PolicyManager:
 
         self.infer_output_index = infer_output_index
         self.infer_compressor_name = compressors[infer_output_index].__class__.__name__
+        self._supports_weight_sync = bool(
+            getattr(compressors[infer_output_index], "supports_weight_sync", False)
+        )
 
         # 当前 sampler 正在使用的“推理 backbone”
         self.current_infer_model: Optional[Any] = None
@@ -95,16 +99,33 @@ class PolicyManager:
     # ------------------------------------------------------------------
     # 广播 compiled_backbone 到 rollout workers
     # ------------------------------------------------------------------
-    def _broadcast_inference_model(self, model, warmup=False):
+    def _broadcast_inference_model(self, model, warmup=False, update_only=False):
         """
         将给定 inference backbone 设置到所有 rollout worker 的 policy.model 中。
         你的 CustomPolicyNet 需要实现 set_compiled_backbone()。
         """
         workers = self.algo.workers.remote_workers()
+        state_dict = None
+        if update_only and model is not None:
+            try:
+                state = model.state_dict()
+                state_dict = {k: (v.detach().cpu() if torch.is_tensor(v) else v)
+                              for k, v in state.items()}
+            except Exception as exc:
+                print(f"[PolicyManager] ⚠️ Failed to capture compiled state for update-only swap: {exc}")
+                update_only = False
+                state_dict = None
 
         def _set(worker):
             def inner(policy, pid):
-                if hasattr(policy.model, "set_compiled_backbone"):
+                did_update = False
+                if update_only and hasattr(policy.model, "update_compiled_backbone_weights") and state_dict is not None:
+                    try:
+                        policy.model.update_compiled_backbone_weights(state_dict)
+                        did_update = True
+                    except Exception as exc:
+                        print(f"[PolicyManager] ⚠️ update_only failed on worker, fallback to full swap: {exc}")
+                if not did_update and hasattr(policy.model, "set_compiled_backbone"):
                     policy.model.set_compiled_backbone(model)
                     if warmup and hasattr(policy.model, "warmup_compiled_backbone"):
                         policy.model.warmup_compiled_backbone()
@@ -115,7 +136,8 @@ class PolicyManager:
         if workers:
             ray.get([w.apply.remote(_set) for w in workers])
 
-        print("[Broadcast] 📤 Inference backbone updated on all sampler workers.")
+        if not update_only:
+            print("[Broadcast] 📤 Inference backbone updated on all sampler workers.")
 
     # ------------------------------------------------------------------
     # 异步模式：在每个 epoch 开头尝试 swap（若异步线程已完成）
@@ -136,9 +158,51 @@ class PolicyManager:
         self.last_meta = meta
 
         warmup = (self.mode == CompileMode.ASYNC and self.async_warmup)
-        self._broadcast_inference_model(infer_model, warmup=warmup)
-        print("[AsyncCompile] 🔁 Swapped inference model.")
+        update_only = self._should_update_only(meta)
+        t0 = time.time()
+        self._broadcast_inference_model(infer_model, warmup=warmup and not update_only, update_only=update_only)
+        swap_latency = time.time() - t0
+        if meta is None:
+            meta = {}
+        meta.setdefault("SwapLatency", swap_latency)
+        if not update_only:
+            print("[AsyncCompile] 🔁 Swapped inference model.")
         return meta
+
+    def push_weight_update(self):
+        """
+        将训练模型最新的 backbone 权重同步到已存在的推理 backbone。
+        仅对支持纯权重更新的压缩器（例如 compile）启用。
+        """
+        if not self._supports_weight_sync:
+            return
+        if self.current_infer_model is None:
+            return
+
+        snapshot = self._snapshot_train_backbone()
+        if snapshot is None:
+            return
+
+        # 先更新本地推理模型，避免下一次广播仍旧是旧权重
+        self._load_state_into_infer(snapshot)
+
+        workers = self.algo.workers.remote_workers()
+        if not workers:
+            return
+
+        def _update(worker):
+            def inner(policy, pid):
+                if hasattr(policy.model, "update_compiled_backbone_weights"):
+                    try:
+                        policy.model.update_compiled_backbone_weights(snapshot)
+                    except Exception as exc:
+                        print(f"[PolicyManager] ⚠️ Weight push failed on worker, skipping: {exc}")
+                return 1
+
+            worker.foreach_policy(inner)
+            return 1
+
+        ray.get([w.apply.remote(_update) for w in workers])
 
     # ------------------------------------------------------------------
     # 同步/异步触发压缩
@@ -159,7 +223,8 @@ class PolicyManager:
             self.current_infer_model = infer_model
             self.last_meta = meta
 
-            self._broadcast_inference_model(infer_model, warmup=False)
+            update_only = self._should_update_only(meta)
+            self._broadcast_inference_model(infer_model, warmup=False, update_only=update_only)
             print("[SyncCompile] ✅ Compiled & swapped immediately.")
             return meta
 
@@ -188,6 +253,45 @@ class PolicyManager:
 
     def get_infer_compressor_name(self) -> str:
         return self.infer_compressor_name
+
+    def _should_update_only(self, meta: Optional[Dict[str, Any]]) -> bool:
+        if not meta:
+            return False
+        name = self.get_infer_compressor_name()
+        info = meta.get(name)
+        if not info:
+            return False
+        return bool(info.get("reused"))
+
+    def _snapshot_train_backbone(self):
+        bb = getattr(self.train_model, "backbone", None)
+        if bb is None:
+            return None
+        return {
+            k: v.detach().cpu().clone()
+            for k, v in bb.state_dict().items()
+        }
+
+    def _load_state_into_infer(self, snapshot: Dict[str, Any]):
+        if self.current_infer_model is None:
+            return
+        if torch is None:
+            return
+        target = getattr(self.current_infer_model, "_orig_mod", self.current_infer_model)
+        try:
+            device = next(target.parameters()).device
+        except StopIteration:
+            device = torch.device("cpu")
+        converted = {}
+        for k, v in snapshot.items():
+            if torch.is_tensor(v):
+                converted[k] = v.to(device)
+            else:
+                converted[k] = v
+        try:
+            target.load_state_dict(converted, strict=False)
+        except Exception as exc:
+            print(f"[PolicyManager] ⚠️ Failed to update local inference model: {exc}")
 
     # ------------------------------------------------------------------
     # 可选：编译本地训练 backbone 加速前向

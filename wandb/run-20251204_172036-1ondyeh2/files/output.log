@@ -1,0 +1,45 @@
+[ASYNC] Epoch   1 | Reward=12.09 | Samples=2000 | Total=25.70s (Rollout=17.43s, Train=8.15s) | Thrpt=77.8/s | Compile=None | Infer=16.695s | Env=0.735s
+[ASYNC] Epoch   2 | Reward=9.47 | Samples=2000 | Total=19.91s (Rollout=17.22s, Train=2.61s) | Thrpt=100.4/s | Compile=None | Infer=16.199s | Env=1.016s
+[36m(RolloutWorker pid=715183)[0m W1204 17:21:26.768000 715183 site-packages/torch/utils/cpp_extension.py:118] [0/0] No CUDA runtime is found, using CUDA_HOME='/usr'
+[36m(RolloutWorker pid=715183)[0m 2025-12-04 17:20:32,533	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 3x across cluster][0m
+Traceback (most recent call last):
+  File "/home/mhm/workspace/rllib-accelerator/main.py", line 168, in <module>
+    trainer.run(num_epochs=hparams["num_epochs"])
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 221, in run
+    self.train_epoch(e)
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 125, in train_epoch
+    meta_swap = self.manager.maybe_swap()
+  File "/home/mhm/workspace/rllib-accelerator/framework/policy_manager.py", line 157, in maybe_swap
+    self._broadcast_inference_model(infer_model, warmup=warmup and not update_only, update_only=update_only)
+  File "/home/mhm/workspace/rllib-accelerator/framework/policy_manager.py", line 131, in _broadcast_inference_model
+    ray.get([w.apply.remote(_set) for w in workers])
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/worker.py", line 2626, in get
+    raise value
+ray.exceptions.RayActorError: The actor died unexpectedly before finishing this task.
+	class_name:
+	actor_id: d3717640f301324a75862e9e01000000
+
+Traceback (most recent call last):
+  File "/home/mhm/workspace/rllib-accelerator/main.py", line 168, in <module>
+    trainer.run(num_epochs=hparams["num_epochs"])
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 221, in run
+    self.train_epoch(e)
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 125, in train_epoch
+    meta_swap = self.manager.maybe_swap()
+  File "/home/mhm/workspace/rllib-accelerator/framework/policy_manager.py", line 157, in maybe_swap
+    self._broadcast_inference_model(infer_model, warmup=warmup and not update_only, update_only=update_only)
+  File "/home/mhm/workspace/rllib-accelerator/framework/policy_manager.py", line 131, in _broadcast_inference_model
+    ray.get([w.apply.remote(_set) for w in workers])
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/worker.py", line 2626, in get
+    raise value
+ray.exceptions.RayActorError: The actor died unexpectedly before finishing this task.
+	class_name:
+	actor_id: d3717640f301324a75862e9e01000000

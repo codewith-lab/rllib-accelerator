@@ -1,0 +1,35 @@
+Traceback (most recent call last):
+  File "/home/mhm/workspace/rllib-accelerator/main.py", line 168, in <module>
+    trainer.run(num_epochs=hparams["num_epochs"])
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 221, in run
+    self.train_epoch(e)
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 133, in train_epoch
+    samples = ray.get([w.sample.remote() for w in workers])
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/worker.py", line 2626, in get
+    raise value
+ray.exceptions.RayActorError: The actor died unexpectedly before finishing this task.
+	class_name:
+	actor_id: 344c0d0d15c2559bd3be2c6701000000
+
+Traceback (most recent call last):
+  File "/home/mhm/workspace/rllib-accelerator/main.py", line 168, in <module>
+    trainer.run(num_epochs=hparams["num_epochs"])
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 221, in run
+    self.train_epoch(e)
+  File "/home/mhm/workspace/rllib-accelerator/framework/trainer.py", line 133, in train_epoch
+    samples = ray.get([w.sample.remote() for w in workers])
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/ray/_private/worker.py", line 2626, in get
+    raise value
+ray.exceptions.RayActorError: The actor died unexpectedly before finishing this task.
+	class_name:
+	actor_id: 344c0d0d15c2559bd3be2c6701000000
+
+[36m(RolloutWorker pid=711320)[0m 2025-12-04 17:09:19,275	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 4x across cluster][0m

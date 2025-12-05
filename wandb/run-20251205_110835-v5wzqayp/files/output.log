@@ -1,0 +1,19 @@
+2025-12-05 11:08:36,533	WARNING deprecation.py:50 -- DeprecationWarning: `remote_workers()` has been deprecated. Use `Use either the `foreach_worker()`, `foreach_worker_with_id()`, or `foreach_worker_async()` APIs of `WorkerSet`, which all handle fault tolerance.` instead. This will raise an error in the future!
+[NONE] Epoch   1 | Reward=20.68 | Samples=2000 | Total=4.61s (Rollout=3.90s, Train=0.71s) | Thrpt=433.8/s | Compile=None | Swap=None | Infer=3.442s | Env=0.455s
+[NONE] Epoch   2 | Reward=10.36 | Samples=2000 | Total=4.32s (Rollout=3.81s, Train=0.51s) | Thrpt=463.4/s | Compile=None | Swap=None | Infer=3.297s | Env=0.509s
+[NONE] Epoch   3 | Reward=9.91 | Samples=2000 | Total=4.13s (Rollout=3.59s, Train=0.53s) | Thrpt=484.6/s | Compile=None | Swap=None | Infer=3.118s | Env=0.476s
+[NONE] Epoch   4 | Reward=10.76 | Samples=2000 | Total=4.37s (Rollout=3.85s, Train=0.51s) | Thrpt=457.9/s | Compile=None | Swap=None | Infer=3.342s | Env=0.513s
+[NONE] Epoch   5 | Reward=12.10 | Samples=2000 | Total=4.33s (Rollout=3.80s, Train=0.54s) | Thrpt=461.5/s | Compile=None | Swap=None | Infer=3.291s | Env=0.506s
+[NONE] Epoch   6 | Reward=16.81 | Samples=2000 | Total=4.37s (Rollout=3.84s, Train=0.53s) | Thrpt=457.9/s | Compile=None | Swap=None | Infer=3.339s | Env=0.498s
+[NONE] Epoch   7 | Reward=26.51 | Samples=2000 | Total=4.33s (Rollout=3.82s, Train=0.51s) | Thrpt=461.6/s | Compile=None | Swap=None | Infer=3.326s | Env=0.498s
+[NONE] Epoch   8 | Reward=76.92 | Samples=2000 | Total=5.25s (Rollout=4.70s, Train=0.55s) | Thrpt=380.6/s | Compile=None | Swap=None | Infer=3.383s | Env=1.316s
+[NONE] Epoch   9 | Reward=40.02 | Samples=2000 | Total=4.43s (Rollout=3.89s, Train=0.54s) | Thrpt=452.0/s | Compile=None | Swap=None | Infer=3.392s | Env=0.493s
+[NONE] Epoch  10 | Reward=41.87 | Samples=2000 | Total=4.05s (Rollout=3.55s, Train=0.50s) | Thrpt=493.6/s | Compile=None | Swap=None | Infer=3.107s | Env=0.447s
+
+=== Summary (none) ===
+Epochs: 10
+Reward mean (avg over epochs): 26.59
+Total time (avg per epoch): 4.42s
+  Rollout time avg: 3.87s | Train time avg: 0.54s
+Throughput (avg samples/s): 454.7
+Compile latency: N/A

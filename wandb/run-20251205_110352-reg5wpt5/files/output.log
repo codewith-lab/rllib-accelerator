@@ -1,0 +1,22 @@
+[ASYNC] Epoch   1 | Reward=13.90 | Samples=2000 | Total=1.16s (Rollout=0.99s, Train=0.17s) | Thrpt=1727.9/s | Compile=None | Infer=0.605s | Env=0.380s
+[ASYNC] Epoch   2 | Reward=17.86 | Samples=2000 | Total=1.18s (Rollout=0.96s, Train=0.22s) | Thrpt=1694.0/s | Compile=None | Infer=0.588s | Env=0.372s
+[36m(RolloutWorker pid=13402)[0m /home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/_utils.py:444: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+[36m(RolloutWorker pid=13402)[0m   device=storage.device,
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   3 | Reward=15.81 | Samples=2000 | Total=0.77s (Rollout=0.60s, Train=0.18s) | Thrpt=2581.3/s | Compile=0.05308175086975098 | Infer=0.242s | Env=0.353s
+[ASYNC] Epoch   4 | Reward=15.76 | Samples=2000 | Total=0.73s (Rollout=0.56s, Train=0.17s) | Thrpt=2746.4/s | Compile=None | Infer=0.235s | Env=0.323s
+[ASYNC] Epoch   5 | Reward=15.84 | Samples=2000 | Total=0.73s (Rollout=0.56s, Train=0.16s) | Thrpt=2749.2/s | Compile=None | Infer=0.235s | Env=0.325s
+[ASYNC] Epoch   6 | Reward=16.86 | Samples=2000 | Total=0.83s (Rollout=0.57s, Train=0.26s) | Thrpt=2402.2/s | Compile=None | Infer=0.239s | Env=0.330s
+[ASYNC] Epoch   7 | Reward=15.96 | Samples=2000 | Total=0.74s (Rollout=0.57s, Train=0.16s) | Thrpt=2711.0/s | Compile=None | Infer=0.242s | Env=0.327s
+[ASYNC] Epoch   8 | Reward=16.08 | Samples=2000 | Total=0.75s (Rollout=0.56s, Train=0.18s) | Thrpt=2676.5/s | Compile=None | Infer=0.236s | Env=0.322s
+[ASYNC] Epoch   9 | Reward=17.10 | Samples=2000 | Total=0.76s (Rollout=0.57s, Train=0.18s) | Thrpt=2640.6/s | Compile=None | Infer=0.243s | Env=0.329s
+[ASYNC] Epoch  10 | Reward=16.25 | Samples=2000 | Total=0.74s (Rollout=0.57s, Train=0.17s) | Thrpt=2698.2/s | Compile=None | Infer=0.241s | Env=0.330s
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 16.14
+Total time (avg per epoch): 0.84s
+  Rollout time avg: 0.65s | Train time avg: 0.18s
+Throughput (avg samples/s): 2462.7
+Compile latency (avg when available): 0.053s

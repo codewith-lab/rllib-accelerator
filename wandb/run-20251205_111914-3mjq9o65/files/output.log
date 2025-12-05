@@ -1,0 +1,37 @@
+[ASYNC] Epoch   1 | Reward=20.68 | Samples=2000 | Total=4.61s (Rollout=3.83s, Train=0.75s) | Thrpt=433.8/s | Compile=None | Swap=None | Infer=3.369s | Env=0.463s
+[ASYNC] Epoch   2 | Reward=10.36 | Samples=2000 | Total=4.46s (Rollout=3.89s, Train=0.56s) | Thrpt=448.0/s | Compile=None | Swap=None | Infer=3.360s | Env=0.531s
+[36m(RolloutWorker pid=35518)[0m /home/mhm/.pyenv/versions/3.10.14/lib/python3.10/site-packages/torch/_utils.py:444: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+[36m(RolloutWorker pid=35518)[0m   device=storage.device,
+[36m(RolloutWorker pid=35519)[0m 2025-12-05 11:19:13,693	WARNING catalog.py:630 -- Custom ModelV2 should accept all custom options as **kwargs, instead of expecting them in config['custom_model_config']![32m [repeated 2x across cluster][0m
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   3 | Reward=9.78 | Samples=2000 | Total=1.42s (Rollout=0.87s, Train=0.54s) | Thrpt=1405.4/s | Compile=0.2771744728088379 | Swap=0.44777584075927734 | Infer=0.472s | Env=0.397s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   4 | Reward=9.83 | Samples=2000 | Total=1.48s (Rollout=0.85s, Train=0.62s) | Thrpt=1351.7/s | Compile=0.19517254829406738 | Swap=0.41310739517211914 | Infer=0.461s | Env=0.391s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   5 | Reward=9.49 | Samples=2000 | Total=1.41s (Rollout=0.85s, Train=0.54s) | Thrpt=1414.8/s | Compile=0.14847517013549805 | Swap=0.4010810852050781 | Infer=0.461s | Env=0.393s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   6 | Reward=9.35 | Samples=2000 | Total=1.43s (Rollout=0.88s, Train=0.53s) | Thrpt=1403.3/s | Compile=0.30118513107299805 | Swap=0.39168596267700195 | Infer=0.477s | Env=0.399s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   7 | Reward=9.31 | Samples=2000 | Total=1.47s (Rollout=0.90s, Train=0.54s) | Thrpt=1362.4/s | Compile=0.14803314208984375 | Swap=0.3964109420776367 | Infer=0.494s | Env=0.410s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   8 | Reward=9.41 | Samples=2000 | Total=1.40s (Rollout=0.85s, Train=0.53s) | Thrpt=1429.0/s | Compile=0.14736080169677734 | Swap=0.3953523635864258 | Infer=0.461s | Env=0.388s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch   9 | Reward=9.31 | Samples=2000 | Total=1.43s (Rollout=0.86s, Train=0.55s) | Thrpt=1398.0/s | Compile=0.1409437656402588 | Swap=2.111783742904663 | Infer=0.463s | Env=0.398s
+[Broadcast] 📤 Inference backbone updated on all sampler workers.
+[AsyncCompile] 🔁 Swapped inference model.
+[ASYNC] Epoch  10 | Reward=9.31 | Samples=2000 | Total=1.41s (Rollout=0.87s, Train=0.52s) | Thrpt=1422.0/s | Compile=0.15209484100341797 | Swap=0.3930075168609619 | Infer=0.474s | Env=0.393s
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 10.68
+Total time (avg per epoch): 2.05s
+  Rollout time avg: 1.47s | Train time avg: 0.57s
+Throughput (avg samples/s): 1206.8
+Compile latency (avg when available): 0.189s

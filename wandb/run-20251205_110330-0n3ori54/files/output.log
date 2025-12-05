@@ -1,0 +1,18 @@
+[ASYNC] Epoch   1 | Reward=13.90 | Samples=2000 | Total=5.69s (Rollout=1.03s, Train=4.65s) | Thrpt=351.4/s | Compile=None | Infer=0.630s | Env=0.404s
+[ASYNC] Epoch   2 | Reward=17.86 | Samples=2000 | Total=1.05s (Rollout=0.89s, Train=0.16s) | Thrpt=1898.9/s | Compile=None | Infer=0.542s | Env=0.350s
+[ASYNC] Epoch   3 | Reward=25.87 | Samples=2000 | Total=1.13s (Rollout=0.85s, Train=0.27s) | Thrpt=1771.3/s | Compile=0.0034928321838378906 | Infer=0.537s | Env=0.317s
+[ASYNC] Epoch   4 | Reward=43.46 | Samples=2000 | Total=1.28s (Rollout=0.89s, Train=0.39s) | Thrpt=1563.0/s | Compile=None | Infer=0.567s | Env=0.320s
+[ASYNC] Epoch   5 | Reward=47.56 | Samples=2000 | Total=1.16s (Rollout=0.86s, Train=0.30s) | Thrpt=1727.7/s | Compile=0.004537105560302734 | Infer=0.542s | Env=0.316s
+[ASYNC] Epoch   6 | Reward=63.74 | Samples=2000 | Total=1.20s (Rollout=0.92s, Train=0.28s) | Thrpt=1661.5/s | Compile=0.004241466522216797 | Infer=0.583s | Env=0.341s
+[ASYNC] Epoch   7 | Reward=52.36 | Samples=2000 | Total=1.12s (Rollout=0.86s, Train=0.25s) | Thrpt=1792.6/s | Compile=0.003966808319091797 | Infer=0.540s | Env=0.318s
+[ASYNC] Epoch   8 | Reward=71.74 | Samples=2000 | Total=1.20s (Rollout=0.86s, Train=0.34s) | Thrpt=1672.1/s | Compile=None | Infer=0.540s | Env=0.315s
+[ASYNC] Epoch   9 | Reward=77.76 | Samples=2000 | Total=1.09s (Rollout=0.86s, Train=0.22s) | Thrpt=1832.5/s | Compile=0.0045468807220458984 | Infer=0.542s | Env=0.323s
+[ASYNC] Epoch  10 | Reward=72.72 | Samples=2000 | Total=1.08s (Rollout=0.86s, Train=0.22s) | Thrpt=1849.6/s | Compile=None | Infer=0.538s | Env=0.320s
+
+=== Summary (async) ===
+Epochs: 10
+Reward mean (avg over epochs): 48.70
+Total time (avg per epoch): 1.60s
+  Rollout time avg: 0.89s | Train time avg: 0.71s
+Throughput (avg samples/s): 1612.1
+Compile latency (avg when available): 0.004s

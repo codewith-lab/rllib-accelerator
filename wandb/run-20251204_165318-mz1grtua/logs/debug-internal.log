@@ -1,0 +1,12 @@
+{"time":"2025-12-04T16:53:18.721539533-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.1"}
+{"time":"2025-12-04T16:53:18.89498646-05:00","level":"INFO","msg":"stream: created new stream","id":"mz1grtua"}
+{"time":"2025-12-04T16:53:18.895115852-05:00","level":"INFO","msg":"handler: started","stream_id":"mz1grtua"}
+{"time":"2025-12-04T16:53:18.89530003-05:00","level":"INFO","msg":"stream: started","id":"mz1grtua"}
+{"time":"2025-12-04T16:53:18.895367207-05:00","level":"INFO","msg":"writer: started","stream_id":"mz1grtua"}
+{"time":"2025-12-04T16:53:18.895387871-05:00","level":"INFO","msg":"sender: started","stream_id":"mz1grtua"}
+{"time":"2025-12-04T16:53:45.602823758-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-04T16:53:45.80824275-05:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-12-04T16:53:45.811935268-05:00","level":"INFO","msg":"stream: closing","id":"mz1grtua"}
+{"time":"2025-12-04T16:53:45.811964169-05:00","level":"INFO","msg":"handler: closed","stream_id":"mz1grtua"}
+{"time":"2025-12-04T16:53:45.812106161-05:00","level":"INFO","msg":"sender: closed","stream_id":"mz1grtua"}
+{"time":"2025-12-04T16:53:45.812118471-05:00","level":"INFO","msg":"stream: closed","id":"mz1grtua"}
