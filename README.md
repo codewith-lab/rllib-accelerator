@@ -102,3 +102,37 @@ rollout workers.
 - As of this implementation, we focus on CPU rollouts. Training can optionally
   run on GPU; compilation/quantization pipelines run on whichever device the
   backbone resides.
+
+## Teacher–Student Training Prototype
+
+For experiments where a lightweight “student” policy interacts with the
+environment while a much larger “teacher” policy trains on the same trajectories,
+use the standalone script below (it does not touch the compile/quant pipeline):
+
+```bash
+python scripts/train_teacher_student.py \
+    --env-id CartPole-v1 \
+    --num-epochs 300 \
+    --student-hidden-dim 64 --student-hidden-depth 2 \
+    --teacher-hidden-dim 1024 --teacher-hidden-depth 6
+```
+
+Key CLI flags let you control student/teacher model sizes, learning rates,
+rollout batch sizes, and the device the teacher trains on. Internally the script
+uses RLlib PPO for the student (to generate data) and applies a PPO-style update
+to the teacher backbone with the exact same advantages/returns, so both models
+improve simultaneously without modifying the existing `main.py` workflow.
+Each run writes per-epoch JSONL logs under `logs/teacher_student/`, matching the
+format used by the main trainer for easy comparison.
+
+To sweep over multiple student sizes automatically, run:
+
+```bash
+python scripts/run_teacher_student_grid.py \
+    --student-hidden-dims 64 128 256 \
+    --student-hidden-depths 2 4
+```
+
+The grid runner executes every dim/depth combination (sequentially, reusing
+other hyper-parameters from `teacher_student/config.py` or CLI overrides),
+logging each run under `logs/teacher_student/teacher_student_dim{N}_depth{M}_*.jsonl`.
