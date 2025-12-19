@@ -1,7 +1,7 @@
 """
-绘制剪枝实验结果
+Plot pruning experiment results.
 
-用法：
+Usage:
     python scripts/plot_pruning_results.py --log-dir logs/pruning_basic
 """
 
@@ -18,7 +18,7 @@ from matplotlib import cm
 
 
 def load_jsonl(file_path: str) -> List[Dict]:
-    """加载 JSONL 文件"""
+    """Load a JSONL file."""
     data = []
     with open(file_path, 'r') as f:
         for line in f:
@@ -28,7 +28,7 @@ def load_jsonl(file_path: str) -> List[Dict]:
 
 
 def smooth_curve(values, weight=0.9):
-    """指数移动平均平滑"""
+    """Apply exponential moving average smoothing."""
     smoothed = []
     last = values[0]
     for v in values:
@@ -39,13 +39,13 @@ def smooth_curve(values, weight=0.9):
 
 
 def plot_reward_comparison(log_dirs: Dict[str, str], output_path: str = None):
-    """绘制 reward 对比图"""
+    """Plot reward comparison chart."""
     fig, ax = plt.subplots(figsize=(12, 6))
     
     colors = cm.get_cmap('tab10')
     
     for idx, (label, log_dir) in enumerate(log_dirs.items()):
-        # 找到第一个 jsonl 文件
+        # Find the first jsonl file
         log_files = list(Path(log_dir).glob("*.jsonl"))
         if not log_files:
             print(f"⚠️ No log files found in {log_dir}")
@@ -57,10 +57,10 @@ def plot_reward_comparison(log_dirs: Dict[str, str], output_path: str = None):
         epochs = [d['epoch'] for d in data]
         rewards = [d.get('reward_mean', 0) for d in data]
         
-        # 绘制原始曲线（半透明）
+        # Plot the raw curve (semi-transparent)
         ax.plot(epochs, rewards, alpha=0.2, color=colors(idx))
         
-        # 绘制平滑曲线
+        # Plot the smoothed curve
         if len(rewards) > 1:
             smoothed = smooth_curve(rewards, weight=0.9)
             ax.plot(epochs, smoothed, label=label, linewidth=2, color=colors(idx))
@@ -85,7 +85,7 @@ def plot_reward_comparison(log_dirs: Dict[str, str], output_path: str = None):
 
 
 def plot_throughput_comparison(log_dirs: Dict[str, str], output_path: str = None):
-    """绘制吞吐量对比图"""
+    """Plot throughput comparison."""
     fig, ax = plt.subplots(figsize=(10, 6))
     
     labels = []
@@ -99,7 +99,7 @@ def plot_throughput_comparison(log_dirs: Dict[str, str], output_path: str = None
         log_file = log_files[0]
         data = load_jsonl(log_file)
         
-        # 计算平均吞吐量（跳过前几个 epoch 的预热）
+        # Compute average throughput (skip early warm-up epochs)
         skip_epochs = min(5, len(data) // 10)
         throughput_values = [d.get('throughput', 0) for d in data[skip_epochs:]]
         avg_throughput = np.mean(throughput_values)
@@ -107,11 +107,11 @@ def plot_throughput_comparison(log_dirs: Dict[str, str], output_path: str = None
         labels.append(label)
         throughputs.append(avg_throughput)
     
-    # 绘制条形图
+    # Plot bar chart
     x = np.arange(len(labels))
     bars = ax.bar(x, throughputs, color='steelblue', alpha=0.7)
     
-    # 添加数值标签
+    # Add value labels
     for bar, val in zip(bars, throughputs):
         height = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2., height,
@@ -137,7 +137,7 @@ def plot_throughput_comparison(log_dirs: Dict[str, str], output_path: str = None
 
 
 def plot_inference_time_comparison(log_dirs: Dict[str, str], output_path: str = None):
-    """绘制推理时间对比图"""
+    """Plot inference time comparison."""
     fig, ax = plt.subplots(figsize=(10, 6))
     
     labels = []
@@ -151,19 +151,19 @@ def plot_inference_time_comparison(log_dirs: Dict[str, str], output_path: str = 
         log_file = log_files[0]
         data = load_jsonl(log_file)
         
-        # 计算平均推理时间
+        # Compute average inference time
         skip_epochs = min(5, len(data) // 10)
         infer_values = [d.get('inference_time', 0) for d in data[skip_epochs:]]
         avg_infer = np.mean(infer_values)
         
         labels.append(label)
-        inference_times.append(avg_infer * 1000)  # 转换为毫秒
+        inference_times.append(avg_infer * 1000)  # Convert to milliseconds
     
-    # 绘制条形图
+    # Plot bar chart
     x = np.arange(len(labels))
     bars = ax.bar(x, inference_times, color='coral', alpha=0.7)
     
-    # 添加数值标签
+    # Add value labels
     for bar, val in zip(bars, inference_times):
         height = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2., height,
@@ -189,14 +189,14 @@ def plot_inference_time_comparison(log_dirs: Dict[str, str], output_path: str = 
 
 
 def plot_compression_ratio(log_dirs: Dict[str, str], output_path: str = None):
-    """绘制压缩率变化图（仅适用于剪枝实验）"""
+    """Plot compression ratio over time (pruning experiments only)."""
     fig, ax = plt.subplots(figsize=(12, 6))
     
     colors = cm.get_cmap('tab10')
     
     for idx, (label, log_dir) in enumerate(log_dirs.items()):
         if 'prune' not in label.lower():
-            continue  # 只处理剪枝相关的实验
+            continue  # Only handle pruning-related experiments
         
         log_files = list(Path(log_dir).glob("*.jsonl"))
         if not log_files:
@@ -205,15 +205,15 @@ def plot_compression_ratio(log_dirs: Dict[str, str], output_path: str = None):
         log_file = log_files[0]
         data = load_jsonl(log_file)
         
-        # 提取剪枝信息
+        # Extract pruning info
         epochs = []
         ratios = []
         
         for d in data:
-            # 尝试从日志中提取压缩率信息
-            # 注意：这需要在压缩时记录到日志中
+            # Try to extract compression ratio from logs
+            # Note: requires logging compression_ratio during compression
             epoch = d.get('epoch')
-            # 如果有 compression_ratio 字段
+            # If compression_ratio exists
             ratio = d.get('compression_ratio')
             if ratio is not None:
                 epochs.append(epoch)
@@ -242,7 +242,7 @@ def plot_compression_ratio(log_dirs: Dict[str, str], output_path: str = None):
 
 
 def print_summary_table(log_dirs: Dict[str, str]):
-    """打印性能对比表格"""
+    """Print performance comparison table."""
     print("\n" + "="*80)
     print("PERFORMANCE SUMMARY")
     print("="*80)
@@ -259,14 +259,14 @@ def print_summary_table(log_dirs: Dict[str, str]):
         
         skip = min(5, len(data) // 10)
         
-        # 计算平均指标
-        rewards = [d.get('reward_mean', 0) for d in data[-50:]]  # 最后 50 个 epoch
+        # Compute average metrics
+        rewards = [d.get('reward_mean', 0) for d in data[-50:]]  # Last 50 epochs
         throughputs = [d.get('throughput', 0) for d in data[skip:]]
         infer_times = [d.get('inference_time', 0) for d in data[skip:]]
         
         avg_reward = np.mean(rewards)
         avg_throughput = np.mean(throughputs)
-        avg_infer = np.mean(infer_times) * 1000  # 转换为毫秒
+        avg_infer = np.mean(infer_times) * 1000  # Convert to milliseconds
         
         print(f"{label:<30} {avg_reward:<15.2f} {avg_throughput:<15.1f} {avg_infer:<15.2f}ms")
     
@@ -295,11 +295,11 @@ def main():
         print(f"❌ Log directory not found: {log_dir}")
         return
     
-    # 自动发现所有实验子目录
+    # Auto-discover all experiment subdirectories
     log_dirs = {}
     for subdir in sorted(log_dir.iterdir()):
         if subdir.is_dir():
-            # 使用目录名作为标签
+            # Use directory name as label
             label = subdir.name
             log_dirs[label] = str(subdir)
     
@@ -311,17 +311,17 @@ def main():
     for label in log_dirs.keys():
         print(f"  - {label}")
     
-    # 设置输出目录
+    # Set output directory
     output_dir = Path(args.output_dir) if args.output_dir else log_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # 生成所有图表
+    # Generate all plots
     print("\nGenerating plots...")
     plot_reward_comparison(log_dirs, str(output_dir / "reward_comparison.png"))
     plot_throughput_comparison(log_dirs, str(output_dir / "throughput_comparison.png"))
     plot_inference_time_comparison(log_dirs, str(output_dir / "inference_time_comparison.png"))
     
-    # 打印性能对比表
+    # Print performance comparison table
     print_summary_table(log_dirs)
     
     print(f"\n✅ All plots saved to: {output_dir}")
@@ -329,4 +329,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

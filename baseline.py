@@ -14,7 +14,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
 from ray.rllib.policy.sample_batch import concat_samples
 
-# ---- 控制 Ray 日志 ----
+# ---- Control Ray logging ----
 os.environ["RAY_DEDUP_LOGS"] = "0"
 logging.getLogger("ray").setLevel(logging.ERROR)
 
@@ -23,7 +23,7 @@ F = nn.functional
 
 
 # ============================================================
-# 三种模式
+# Three modes
 # ============================================================
 class CompileMode(Enum):
     NONE = "none"
@@ -32,8 +32,8 @@ class CompileMode(Enum):
 
 
 # ============================================================
-# 纯 PyTorch 的前向骨干（用于被 torch.compile）
-# 接口：forward(obs: Tensor) -> (logits, value)
+# Pure PyTorch forward backbone (for torch.compile)
+# Interface: forward(obs: Tensor) -> (logits, value)
 # ============================================================
 class PolicyBackbone(nn.Module):
     def __init__(self, in_dim: int, num_outputs: int, hidden_dim: int = 64):
@@ -52,9 +52,9 @@ class PolicyBackbone(nn.Module):
 
 
 # ============================================================
-# 自定义 PPO Policy 模型（RLlib 接口）
-# - 训练永远用 self.backbone（未编译版本）
-# - 推理可以用 compiled_backbone（由我们控制）
+# Custom PPO Policy model (RLlib interface)
+# - Training always uses self.backbone (uncompiled)
+# - Inference can use compiled_backbone (controlled by us)
 # ============================================================
 class CustomPolicyNet(TorchModelV2, nn.Module):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
@@ -65,9 +65,9 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         self.in_dim = in_dim
         self.num_outputs = num_outputs
 
-        # 未编译的训练用 backbone
+        # Training backbone (uncompiled)
         self.backbone = PolicyBackbone(in_dim, num_outputs)
-        # 可选的编译后 backbone，仅用于推理
+        # Optional compiled backbone, inference only
         self.compiled_backbone = None
         self.use_compiled = False
 
@@ -75,13 +75,13 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
 
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
-        # 统一转成 tensor，避免 numpy 参与计算图
+        # Convert to tensor to avoid numpy entering the computation graph
         if not isinstance(obs, torch.Tensor):
             obs = torch.as_tensor(obs, dtype=torch.float32)
         else:
             obs = obs.float()
 
-        # 选择当前使用的前向模块（训练 or 推理）
+        # Choose which forward module to use (training vs inference)
         bb = self.compiled_backbone if (self.use_compiled and self.compiled_backbone is not None) else self.backbone
 
         logits, value = bb(obs)
@@ -92,7 +92,7 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
     def value_function(self):
         return self._value_out
 
-    # 供我们在 sampler 上切换推理模型用
+    # Allow swapping the inference model on sampler workers
     def set_compiled_backbone(self, compiled_bb: nn.Module):
         self.compiled_backbone = compiled_bb
         self.use_compiled = compiled_bb is not None
@@ -102,15 +102,15 @@ ModelCatalog.register_custom_model("custom_policy", CustomPolicyNet)
 
 
 # ============================================================
-# 编译 Hook：只针对 backbone
+# Compile hook: only targets the backbone
 # ============================================================
 class CompressionHook:
     @staticmethod
     def snapshot_backbone(train_model: CustomPolicyNet):
         """
-        从 train_model.backbone 抽 snapshot：
-        - 复制 state_dict（detach + cpu + clone）
-        - 记录 in_dim / num_outputs
+        Take a snapshot from train_model.backbone:
+        - Copy state_dict (detach + cpu + clone)
+        - Record in_dim / num_outputs
         """
         bb = train_model.backbone
         state_dict_raw = bb.state_dict()
@@ -124,7 +124,7 @@ class CompressionHook:
     @staticmethod
     def build_compiled_backbone(state_dict, meta, backend="inductor"):
         """
-        给定 backbone 的 snapshot，构造一个新的 PolicyBackbone 并编译。
+        Given a backbone snapshot, construct a new PolicyBackbone and compile it.
         """
         in_dim, num_outputs = meta
         bb = PolicyBackbone(in_dim, num_outputs)
@@ -138,9 +138,9 @@ class CompressionHook:
 
 
 # ============================================================
-# PolicyManager：显式维护训练模型 / 推理骨干
-# - train_model：local worker 上的 CustomPolicyNet（未编译）
-# - compiled_backbone：仅用于 sampler 推理
+# PolicyManager: explicitly maintain training model / inference backbone
+# - train_model: CustomPolicyNet on local worker (uncompiled)
+# - compiled_backbone: only for sampler inference
 # ============================================================
 class PolicyManager:
     def __init__(self, algo, mode=CompileMode.NONE, trigger_every=5, backend="inductor"):
@@ -151,23 +151,23 @@ class PolicyManager:
 
         self.lock = threading.Lock()
 
-        # local worker 上的训练模型（只用它的 backbone）
+        # Training model on local worker (uses only its backbone)
         self.train_model: CustomPolicyNet = self.algo.get_policy().model
 
-        # 当前生效的 compiled backbone（用于 sampler）
+        # Current compiled backbone used by samplers
         self.current_compiled_backbone = None
 
-        # 异步 pending compiled backbone
+        # Pending compiled backbone for async mode
         self.pending_compiled_backbone = None
         self.pending_compile_latency = None
         self.pending_copy_latency = None
 
-        # 最近一次真正生效的编译统计（用于 log）
+        # Most recent compile stats that actually took effect (for logs)
         self.last_compile_latency = None
         self.last_copy_latency = None
         self.last_swap_latency = None
 
-    # ---------------------- 编译触发逻辑 ----------------------
+    # ---------------------- Compile trigger logic ----------------------
     def maybe_trigger_compile(self, epoch: int) -> bool:
         if self.mode == CompileMode.NONE:
             return False
@@ -175,7 +175,7 @@ class PolicyManager:
             return False
 
         if self.mode == CompileMode.SYNC:
-            # 同步：直接 snapshot + compile + 下发到 sampler
+            # SYNC: snapshot + compile + push to samplers
             t_copy0 = time.time()
             state_dict, meta = CompressionHook.snapshot_backbone(self.train_model)
             copy_latency = time.time() - t_copy0
@@ -197,7 +197,7 @@ class PolicyManager:
             self._broadcast_compiled_backbone_to_samplers(compiled_bb)
 
         elif self.mode == CompileMode.ASYNC:
-            # 异步：后台线程 snapshot + compile
+            # ASYNC: background thread snapshot + compile
             def worker():
                 try:
                     print("[AsyncCompile] 🔧 Start background compilation...")
@@ -232,7 +232,7 @@ class PolicyManager:
 
         return True
 
-    # ---------------------- 异步 swap：只替换 sampler 使用的 compiled backbone ----------------------
+    # ---------------------- Async swap: replace compiled backbone used by samplers ----------------------
     def maybe_swap_infer_model(self) -> bool:
         if self.mode != CompileMode.ASYNC:
             return False
@@ -249,7 +249,7 @@ class PolicyManager:
             self.pending_compile_latency = None
             self.pending_copy_latency = None
 
-        # 在锁外进行广播，避免长期持锁
+        # Broadcast outside the lock to avoid long holds
         self.current_compiled_backbone = compiled_bb
         t0 = time.time()
         self._broadcast_compiled_backbone_to_samplers(compiled_bb)
@@ -265,12 +265,12 @@ class PolicyManager:
         )
         return True
 
-    # ---------------------- 把 compiled_backbone 推送到所有 sampler 上 ----------------------
+    # ---------------------- Broadcast compiled_backbone to all samplers ----------------------
     def _broadcast_compiled_backbone_to_samplers(self, compiled_bb: nn.Module):
         workers = self.algo.workers.remote_workers()
 
         def _set_compiled(worker):
-            # 在远程 worker 环境中执行
+            # Execute in the remote worker environment
             def _update_policy(policy, pid):
                 if hasattr(policy.model, "set_compiled_backbone"):
                     policy.model.set_compiled_backbone(compiled_bb)
@@ -284,7 +284,7 @@ class PolicyManager:
 
 
 # ============================================================
-# RLTrainer：rollout + train + logging
+# RLTrainer: rollout + train + logging
 # ============================================================
 class RLTrainer:
     def __init__(self, config, compile_mode=CompileMode.NONE, log_dir="logs", trigger_every=5):
@@ -304,30 +304,30 @@ class RLTrainer:
         self.logf.flush()
 
     def train_epoch(self, epoch: int):
-        # 1) ASYNC：看有没有新的 compiled_backbone 可以下发
+        # 1) ASYNC: check if there's a new compiled_backbone to push
         swapped = False
         if self.compile_mode == CompileMode.ASYNC:
             swapped = self.manager.maybe_swap_infer_model()
 
         t0 = time.time()
 
-        # 2) Rollout：remote workers 用当前 compiled_backbone（若有）采样
+        # 2) Rollout: remote workers sample with current compiled_backbone (if any)
         workers = self.algo.workers.remote_workers()
         samples = ray.get([w.sample.remote() for w in workers])
         train_batch = concat_samples(samples)
         sample_count = train_batch.count
 
-        # 3) 编译触发
+        # 3) Trigger compile
         triggered = self.manager.maybe_trigger_compile(epoch)
 
-        # 4) Train：local worker 用 train_model（未编译）训练
+        # 4) Train: local worker trains with the uncompiled train_model
         result = self.algo.workers.local_worker().learn_on_batch(train_batch)
 
         t1 = time.time()
         step_time = t1 - t0
         throughput = sample_count / step_time
 
-        # 5) 日志：只在真正 compile / swap 的 epoch 记录 latency
+        # 5) Logging: only record latency when compile / swap actually happens
         compile_latency = None
         copy_latency = None
         swap_latency = None
@@ -379,7 +379,7 @@ class RLTrainer:
 
 
 # ============================================================
-# 主流程：对比三种模式
+# Main flow: compare three modes
 # ============================================================
 if __name__ == "__main__":
     ray.init(include_dashboard=False, _metrics_export_port=None)
@@ -395,7 +395,7 @@ if __name__ == "__main__":
         )
     )
     
-    # 兼容不同版本的 Ray API
+    # Handle Ray API differences across versions
     try:
         base_config = base_config.env_runners(num_env_runners=2)
     except AttributeError:

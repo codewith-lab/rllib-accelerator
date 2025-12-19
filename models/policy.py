@@ -11,12 +11,12 @@ from ray.rllib.models import ModelCatalog
 
 
 # ============================================================
-# 1. PolicyBackbone（纯 PyTorch MLP）——可被 torch.compile/quant/prune
+# 1. PolicyBackbone (pure PyTorch MLP) — supports torch.compile/quant/prune
 # ============================================================
 class PolicyBackbone(nn.Module):
     """
-    纯 PyTorch 前向骨干，用于被压缩（compile/quant/prune/distill）。
-    返回 logits 和 value。
+    Pure PyTorch forward backbone intended for compression (compile/quant/prune/distill).
+    Returns logits and value.
     """
 
     def __init__(self, in_dim: int, num_outputs: int, hidden_dims=None, use_residual: bool = False):
@@ -41,10 +41,9 @@ class PolicyBackbone(nn.Module):
     def forward(self, obs: torch.Tensor):
         x = obs
         for layer in self.hidden_layers:
-            use_skip = self.use_residual and getattr(layer, "in_features", None) == getattr(layer, "out_features", None)
-            residual = x if use_skip else None
+            residual = x if self.use_residual else None
             x = F.relu(layer(x))
-            if residual is not None:
+            if residual is not None and residual.shape == x.shape:
                 x = x + residual
 
         logits = self.policy_head(x)
@@ -53,14 +52,14 @@ class PolicyBackbone(nn.Module):
 
 
 # ============================================================
-# 2. RLlib 的 CustomPolicyNet
-#    - 训练时使用 self.backbone（未压缩）
-#    - 推理时可切换到 self.compiled_backbone
+# 2. RLlib CustomPolicyNet
+#    - Training uses self.backbone (uncompressed)
+#    - Inference can switch to self.compiled_backbone
 # ============================================================
 class CustomPolicyNet(TorchModelV2, nn.Module):
 
     def __init__(self, obs_space, action_space,
-                 num_outputs, model_config, name):
+                 num_outputs, model_config, name, **kwargs):
 
         TorchModelV2.__init__(self, obs_space, action_space,
                               num_outputs, model_config, name)
@@ -75,7 +74,11 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
             hidden_dims = [hidden_dims]
         if len(hidden_dims) == 0:
             hidden_dims = [64, 64]
-        custom_conf = model_config.get("custom_model_config", {})
+        custom_conf = model_config.get("custom_model_config") or {}
+        if not isinstance(custom_conf, dict):
+            custom_conf = {}
+        if kwargs:
+            custom_conf = {**custom_conf, **kwargs}
         use_residual = bool(custom_conf.get("use_residual", False))
         device_str = custom_conf.get("device", "cpu")
         try:
@@ -88,18 +91,20 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
             resolved_device = torch.device("cpu")
         self.device = resolved_device
 
-        # === 未压缩的训练用 backbone ===
+        # === Uncompressed training backbone ===
         self.hidden_dims = hidden_dims
         self.use_residual = use_residual
         self.backbone = PolicyBackbone(in_dim, num_outputs, hidden_dims, use_residual).to(self.device)
 
-        # === 可选：压缩后的推理 backbone（由 PolicyManager 注入）===
+        # === Optional: compressed inference backbone (injected by PolicyManager) ===
         self.__dict__["_compiled_backbone"] = None
         self.use_compiled = False
 
-        # value_function 输出缓存
+        # value_function output cache
         self._value_out = None
         self._inference_time_accum = 0.0
+        self._collect_calib = False
+        self._calib_buffer = []
 
     # ------------------------------------------------------------
     # RLlib forward
@@ -112,12 +117,18 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         else:
             obs = obs.float()
 
-        # 选择训练 or 推理 backbone
+        if self._collect_calib:
+            try:
+                self._calib_buffer.append(obs.detach().cpu())
+            except Exception:
+                pass
+
+        # Pick training or inference backbone
         compiled_bb = getattr(self, "_compiled_backbone", None)
         bb = compiled_bb if (self.use_compiled and compiled_bb is not None) else self.backbone
         t0 = time.perf_counter()
         if bb is not None:
-            # 将观测移动到 backbone 所在设备，避免 CPU/GPU 混用
+            # Move observations to the backbone device to avoid CPU/GPU mixing
             try:
                 device = next(bb.parameters()).device
             except StopIteration:
@@ -125,29 +136,29 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
             obs = obs.to(device)
 
         logits, value = bb(obs)
-        self._value_out = value.view(-1)     # RLlib 需要 [B] 向量
+        self._value_out = value.view(-1)     # RLlib expects a [B] vector
         self._inference_time_accum += (time.perf_counter() - t0)
 
         return logits, state
 
     # ------------------------------------------------------------
-    # RLlib 需要 value_function()
+    # RLlib requires value_function()
     # ------------------------------------------------------------
     def value_function(self):
         return self._value_out
 
     # ------------------------------------------------------------
-    # PolicyManager 用于给 sampler 注入新的推理模型
+    # PolicyManager hook for injecting a new inference model on samplers
     # ------------------------------------------------------------
     def set_compiled_backbone(self, compiled_bb: nn.Module):
-        """在 sampler worker 上切换推理 backbone。"""
+        """Switch inference backbone on a sampler worker."""
         if "compiled_backbone" in self._modules:
             self._modules.pop("compiled_backbone")
         self.__dict__["_compiled_backbone"] = compiled_bb
         self.use_compiled = (compiled_bb is not None)
 
     def warmup_compiled_backbone(self, batch_size: int = 32):
-        """通过一次 dummy 前向触发 torch.compile 的图捕获，避免首轮延迟。"""
+        """Trigger torch.compile graph capture with a dummy forward to avoid first-iteration delay."""
         compiled_bb = getattr(self, "_compiled_backbone", None)
         if not self.use_compiled or compiled_bb is None:
             return
@@ -186,7 +197,7 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         return total
 
     # ------------------------------------------------------------
-    # state_dict/load_state_dict：处理 torch.compile 引入的 _orig_mod 前缀
+    # state_dict/load_state_dict: handle torch.compile _orig_mod prefix
     # ------------------------------------------------------------
     def state_dict(self, destination=None, prefix="", keep_vars=False):
         state = super().state_dict(destination=destination, prefix=prefix, keep_vars=keep_vars)
@@ -244,5 +255,5 @@ class CustomPolicyNet(TorchModelV2, nn.Module):
         return adjusted
 
 
-# 注册 RLlib model
+# Register RLlib model
 ModelCatalog.register_custom_model("custom_policy", CustomPolicyNet)

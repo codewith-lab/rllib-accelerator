@@ -39,11 +39,11 @@ except ImportError as e:
 
 class Trainer:
     """
-    主训练驱动层：
+    Main training driver:
         - RLlib rollout + train
-        - 调用 PolicyManager 进行同步/异步压缩
-        - 日志统计
-        - 支持任意压缩器列表（compile/quant/prune/...）
+        - Invoke PolicyManager for sync/async compression
+        - Collect and log metrics
+        - Support arbitrary compressor lists (compile/quant/prune/...)
     """
 
     def __init__(self,
@@ -64,10 +64,10 @@ class Trainer:
                  min_epoch_before_compress: int = 0,
                  prune_training_model: bool = False):
 
-        # 构建 RLlib algorithm
+        # Build RLlib algorithm
         self.algo = config.build()
 
-        # 压缩管理器
+        # Compression manager
         self.manager = PolicyManager(
             algo=self.algo,
             compressors=compressors,
@@ -82,7 +82,7 @@ class Trainer:
             prune_training_model=prune_training_model,
         )
 
-        # 日志
+        # Logging
         os.makedirs(log_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.log_path = os.path.join(log_dir, f"{compile_mode.value}_{timestamp}.jsonl")
@@ -96,7 +96,7 @@ class Trainer:
         self.wandb_run = None
         if wandb_enabled and wandb_project:
             if WANDB is None:
-                print("[Trainer] ⚠️ 未检测到 wandb，跳过云端日志。")
+                print("[Trainer] ⚠️ wandb not detected, skipping cloud logging.")
                 self.wandb_run = None
             else:
                 try:
@@ -119,13 +119,13 @@ class Trainer:
                     )
                     self._wandb = WANDB
                 except Exception as e:
-                    print(f"[Trainer] ⚠️ wandb 初始化失败: {e}，跳过云端日志。")
+                    print(f"[Trainer] ⚠️ wandb initialization failed: {e}, skipping cloud logging.")
                     self.wandb_run = None
         elif wandb_enabled and not wandb_project:
-            print("[Trainer] ⚠️ 未提供 wandb 项目名，跳过云端日志。")
+            print("[Trainer] ⚠️ No wandb project provided, skipping cloud logging.")
 
     # ------------------------------------------------------------
-    # 写日志到 JSONL
+    # Write logs to JSONL
     # ------------------------------------------------------------
     def _log(self, rec):
         json.dump(rec, self.log_file)
@@ -135,25 +135,25 @@ class Trainer:
             self.wandb_run.log(rec, step=rec.get("epoch"))
 
     # ------------------------------------------------------------
-    # 单个 epoch
+    # Single epoch
     # ------------------------------------------------------------
     def train_epoch(self, epoch: int):
         """
-        一个完整 epoch：
-            1) async 模式：尝试 swap（若后台已压缩完成）
+        One full epoch:
+            1) async mode: try swap if background compression finished
             2) rollout
             3) learn_on_batch
-            4) trigger（同步或异步压缩）
-            5) 统计日志
+            4) trigger compression (sync or async)
+            5) aggregate logs
         """
 
         # ==================================================================
-        # (1) async 模式：尝试 swap（将 pending compiled backbone 下发）
+        # (1) async mode: try swap (push pending compiled backbone)
         # ==================================================================
         meta_swap = self.manager.maybe_swap()
 
         # ==================================================================
-        # (2) rollout：采样
+        # (2) rollout: sample
         # ==================================================================
         t_rollout_start = time.time()
         workers = self.algo.workers.remote_workers()
@@ -168,20 +168,20 @@ class Trainer:
         rollout_time = t_rollout_end - t_rollout_start
 
         # ==================================================================
-        # (3) train：local worker
+        # (3) train: local worker
         # ==================================================================
         with self.manager.model_lock:
             t_train_start = time.time()
             result = self.algo.workers.local_worker().learn_on_batch(train_batch)
-            # 训练后立即同步权重，保持 rollout workers on-policy
+            # Immediately sync weights after training to keep rollout workers on-policy
             self.algo.workers.sync_weights()
-            # 若推理 backbone 支持仅更新权重，则在同步后立即推送最新参数
+            # If the inference backbone supports weight-only updates, push latest params now
             self.manager.push_weight_update()
             t_train_end = time.time()
         train_time = t_train_end - t_train_start
 
         # ==================================================================
-        # (4) trigger（同步或异步触发压缩）
+        # (4) trigger (sync or async compression)
         # ==================================================================
         meta_trigger = self.manager.maybe_trigger(epoch)
         
@@ -195,13 +195,13 @@ class Trainer:
         swap_latency = None
         compressor_name = self.manager.get_infer_compressor_name()
 
-        # SYNC → 当前 epoch 编译
+        # SYNC → compile in the current epoch
         if self.compile_mode == CompileMode.SYNC and meta_trigger:
             info = meta_trigger.get(compressor_name)
             if info:
                 compile_latency = info.get("latency")
 
-        # ASYNC → 在 swap 时统计
+        # ASYNC → measure at swap time
         if self.compile_mode == CompileMode.ASYNC and meta_swap:
             info = meta_swap.get(compressor_name)
             if info:
@@ -267,14 +267,14 @@ class Trainer:
         )
 
     # ------------------------------------------------------------
-    # 训练主循环
+    # Training loop
     # ------------------------------------------------------------
     def run(self, num_epochs=10):
         for e in range(1, num_epochs + 1):
             self.train_epoch(e)
 
     # ------------------------------------------------------------
-    # 打印总结
+    # Print summary
     # ------------------------------------------------------------
     def summary(self):
         if not self.stats:
@@ -374,7 +374,7 @@ class Trainer:
         return 0.0
 
     def _collect_inference_time(self) -> float:
-        """汇总 rollout workers（以及无 remote 时的 local worker）的推理耗时。"""
+        """Aggregate inference time from rollout workers (and local worker if no remotes)."""
         total = 0.0
 
         def _pull(worker):

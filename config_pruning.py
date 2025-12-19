@@ -92,7 +92,7 @@ EXPERIMENTS_BASIC = [
         "name": "async_compile",
         "mode": CompileMode.ASYNC,
         "compile_training_backbone": False,
-        "trigger_every": 15,  # ✅ 每15个epoch触发一次编译
+        "trigger_every": 15,  # ✅ Trigger compilation every 15 epochs
         "enable_diff_check": False,
         "compressors": ["compile"],
         "async_warmup": True,
@@ -102,7 +102,7 @@ EXPERIMENTS_BASIC = [
         "name": "async_prune",
         "mode": CompileMode.ASYNC,
         "compile_training_backbone": False,  
-        "trigger_every": 15,  # ✅ 每15个epoch触发一次剪枝
+        "trigger_every": 15,  # ✅ Trigger pruning every 15 epochs
         "enable_diff_check": False,     
         "compressors": ["prune"],
         "async_warmup": True,

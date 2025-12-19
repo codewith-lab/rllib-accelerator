@@ -64,7 +64,7 @@ class PolicyManager:
         if not compressors:
             raise ValueError("PolicyManager requires at least one compressor.")
         if infer_output_index < 0 or infer_output_index >= len(compressors):
-            raise ValueError("infer_output_index 超出了 compressors 范围。")
+            raise ValueError("infer_output_index is out of range for compressors.")
 
         self.device = self._resolve_device(device)
 
@@ -211,7 +211,7 @@ class PolicyManager:
         if workers:
             ray.get([w.apply.remote(_set) for w in workers])
 
-        # 剪枝等结构变化的压缩：同时更新训练模型
+        # Structure-changing compression (e.g., pruning): also update training model
         if also_update_training and model is not None:
             self._update_training_backbone(model)
 
@@ -241,15 +241,15 @@ class PolicyManager:
             return
         
         try:
-            # 获取新 backbone 的实际模型（如果被 compile 包装了）
+            # Get the real backbone if it is wrapped by torch.compile
             actual_backbone = getattr(new_backbone, "_orig_mod", new_backbone)
             
-            # 获取 state_dict（用于同步到 remote workers）
+            # Collect state_dict for syncing to remote workers
             backbone_state = actual_backbone.state_dict()
             cpu_state = {k: (v.detach().cpu() if torch.is_tensor(v) else v)
                         for k, v in backbone_state.items()}
             
-            # 获取新模型的结构信息
+            # Capture new model structure
             new_structure = {
                 "in_dim": actual_backbone.hidden_layers[0].in_features if len(actual_backbone.hidden_layers) > 0 else None,
                 "num_outputs": actual_backbone.policy_head.out_features,
@@ -257,34 +257,34 @@ class PolicyManager:
                 "use_residual": actual_backbone.use_residual,
             }
             
-            # 1. 更新 local worker
+            # 1. Update local worker
             local_worker = self.algo.workers.local_worker()
             local_policy = local_worker.get_policy()
             
-            # 保存是否之前被编译过
+            # Remember whether the previous training backbone was compiled
             was_compiled = hasattr(local_policy.model.backbone, "_orig_mod")
             
-            # 创建新 backbone 的副本用于训练
+            # Create a fresh backbone copy for training
             import copy
             training_backbone = copy.deepcopy(actual_backbone)
             training_backbone.to(self.device)
             
-            # 如果之前训练 backbone 被编译过，新的也编译
+            # Compile the new backbone if the prior one was compiled
             if was_compiled and self._compile_training_backbone_flag:
                 training_backbone = torch.compile(training_backbone, backend="inductor")
             
-            # 替换 local backbone
+            # Replace local backbone
             local_policy.model.backbone = training_backbone
             
-            # 更新元信息
+            # Update metadata
             local_policy.model.hidden_dims = new_structure["hidden_dims"]
             
-            # 2. 更新所有 remote workers 的训练 backbone
+            # 2. Update training backbones on all remote workers
             workers = self.algo.workers.remote_workers()
             
             def _update_remote_training(worker):
                 def inner(policy, pid):
-                    # 重建 backbone
+                    # Rebuild backbone
                     from models.policy import PolicyBackbone
                     new_bb = PolicyBackbone(
                         new_structure["in_dim"],
@@ -294,7 +294,7 @@ class PolicyManager:
                     )
                     new_bb.load_state_dict(cpu_state)
                     
-                    # 替换
+                    # Replace
                     policy.model.backbone = new_bb
                     policy.model.hidden_dims = new_structure["hidden_dims"]
                     return 1
@@ -305,7 +305,7 @@ class PolicyManager:
             if workers:
                 ray.get([w.apply.remote(_update_remote_training) for w in workers])
             
-            # 3. 关键：重置优化器状态（避免维度不匹配）
+            # 3. Important: reset optimizer state (avoid shape mismatch)
             self._reset_optimizer_after_prune()
             
             print(f"[PolicyManager] 🔄 Training backbone updated: {new_structure['hidden_dims']}")
@@ -317,44 +317,44 @@ class PolicyManager:
     
     def _reset_optimizer_after_prune(self):
         """
-        剪枝后重置优化器状态
-        
-        关键：剪枝改变了模型维度，优化器的 momentum/variance 等状态会维度不匹配
-        必须重置！
+        Reset optimizer state after pruning.
+
+        Pruning changes model dimensions; optimizer momentum/variance state can mismatch.
+        It must be reset.
         """
         try:
             local_worker = self.algo.workers.local_worker()
             local_policy = local_worker.get_policy()
             
-            # 调试：检查优化器结构
+            # Debug: inspect optimizer structure
             print(f"[PolicyManager] 🔍 Checking optimizer...")
             print(f"  hasattr _optimizer: {hasattr(local_policy, '_optimizer')}")
             print(f"  hasattr _optimizers: {hasattr(local_policy, '_optimizers')}")
             
-            # RLlib 的优化器可能在不同的属性中
+            # Optimizers may live on different attributes in RLlib
             optimizer_to_reset = None
-            lr = 5e-5  # 默认学习率
+            lr = 5e-5  # Default learning rate
             
-            # 尝试多种可能的优化器位置
+            # Try possible optimizer locations
             if hasattr(local_policy, "_optimizer") and local_policy._optimizer is not None:
                 if isinstance(local_policy._optimizer, tuple):
                     optimizer_to_reset = local_policy._optimizer[0]
                 else:
                     optimizer_to_reset = local_policy._optimizer
             elif hasattr(local_policy, "_optimizers") and local_policy._optimizers:
-                # 有些 RLlib 版本用 _optimizers (list)
+                # Some RLlib versions use _optimizers (list)
                 optimizer_to_reset = local_policy._optimizers[0]
             
             if optimizer_to_reset is not None:
-                # 获取学习率
+                # Fetch learning rate
                 if hasattr(optimizer_to_reset, 'param_groups'):
                     lr = optimizer_to_reset.param_groups[0]['lr']
                 
-                # 重新初始化优化器
+                # Reinitialize optimizer
                 import torch.optim as optim
                 new_optimizer = optim.Adam(local_policy.model.parameters(), lr=lr)
                 
-                # 替换
+                # Replace
                 if hasattr(local_policy, "_optimizer"):
                     if isinstance(local_policy._optimizer, tuple):
                         local_policy._optimizer = (new_optimizer, local_policy._optimizer[1])
@@ -373,7 +373,7 @@ class PolicyManager:
             traceback.print_exc()
 
     # ------------------------------------------------------------------
-    # 异步模式：在每个 epoch 开头尝试 swap（若异步线程已完成）
+    # Async mode: attempt swap at each epoch start if background thread finished
     # ------------------------------------------------------------------
     def maybe_swap(self) -> Optional[Dict[str, Any]]:
         if self.mode != CompileMode.ASYNC:
@@ -393,10 +393,10 @@ class PolicyManager:
         warmup = (self.mode == CompileMode.ASYNC and self.async_warmup)
         update_only = self._should_update_only(meta)
         
-        # 调试已禁用（避免刷屏）
+        # Debug logging disabled to avoid spam
         # print(f"[DEBUG] maybe_swap: meta keys = {list(meta.keys()) if meta else None}")
         
-        # 检测是否是结构变化的压缩（如剪枝）
+        # Detect structure-changing compression (e.g., pruning)
         also_update_training = self._is_structure_changing_compression(meta)
         
         t0 = time.time()
@@ -416,10 +416,10 @@ class PolicyManager:
 
     def push_weight_update(self):
         """
-        将训练模型最新的 backbone 权重同步到已存在的推理 backbone。
-        仅对支持纯权重更新的压缩器（例如 compile）启用。
-        
-        注意：对于 Mask Pruning，需要在同步后重新应用mask！
+        Push the latest training backbone weights to the existing inference backbone.
+        Only enabled for compressors that support weight-only updates (e.g., compile).
+
+        Note: For Mask Pruning, masks must be reapplied after syncing.
         """
         if not self._supports_weight_sync:
             return
@@ -430,15 +430,15 @@ class PolicyManager:
         if snapshot is None:
             return
 
-        # 检查结构是否一致（剪枝会改变结构）
+        # Check structure consistency (pruning changes structure)
         if not self._check_structure_match(snapshot):
-            # 结构不匹配，跳过同步（等待异步压缩完成）
+            # Structure mismatch; skip sync and wait for async compression
             return
 
-        # 先更新本地推理模型，避免下一次广播仍旧是旧权重
+        # Update local inference model first to avoid rebroadcasting stale weights
         self._load_state_into_infer(snapshot)
         
-        # Mask pruning 特殊处理：重新应用mask
+        # Mask pruning: reapply masks after syncing
         self._reapply_masks_after_weight_sync()
 
         workers = self.algo.workers.remote_workers()
@@ -460,12 +460,12 @@ class PolicyManager:
         ray.get([w.apply.remote(_update) for w in workers])
 
     # ------------------------------------------------------------------
-    # 同步/异步触发压缩
+    # Trigger compression (sync/async)
     # ------------------------------------------------------------------
     def maybe_trigger(self, epoch: int) -> Optional[Dict[str, Any]]:
         if self.mode == CompileMode.NONE:
             return None
-        # 同步模式 —— 立即执行
+        # Sync mode — run immediately
         if self.mode == CompileMode.SYNC:
             outputs, meta = self.controller.run_sync(self.train_model, epoch)
             if outputs is None:
@@ -489,7 +489,7 @@ class PolicyManager:
             print("[SyncCompile] ✅ Compiled & swapped immediately.")
             return meta
 
-        # 异步模式 —— 触发后台线程
+        # Async mode — trigger background thread
         elif self.mode == CompileMode.ASYNC:
             self.controller.trigger_async(self.train_model, epoch)
             return None
@@ -497,13 +497,13 @@ class PolicyManager:
         return None
 
     # ------------------------------------------------------------------
-    # 获取最近压缩信息
+    # Get latest compression info
     # ------------------------------------------------------------------
     def get_last_meta(self):
         return self.last_meta
 
     # ------------------------------------------------------------------
-    # 供 Trainer 访问的辅助
+    # Helper methods for Trainer
     # ------------------------------------------------------------------
     def _select_infer_model(self, outputs):
         if not outputs:
@@ -690,22 +690,22 @@ class PolicyManager:
 
     def _check_structure_match(self, train_state_dict):
         """
-        检查训练模型和推理模型的结构是否一致
-        
-        如果不一致（例如剪枝后），返回 False
+        Check whether training and inference model structures match.
+
+        Return False if they differ (e.g., after pruning).
         """
         if self.current_infer_model is None:
             return True
         
         try:
-            # 获取推理模型的 state_dict
+            # Get inference model state_dict
             infer_model = self.current_infer_model
             if hasattr(infer_model, "_orig_mod"):
                 infer_model = infer_model._orig_mod
             
             infer_state_dict = infer_model.state_dict()
             
-            # 检查关键层的形状
+            # Check shapes of key layers
             for key in train_state_dict.keys():
                 if key not in infer_state_dict:
                     return False
@@ -714,13 +714,13 @@ class PolicyManager:
                 infer_shape = infer_state_dict[key].shape
                 
                 if train_shape != infer_shape:
-                    # 结构不匹配（可能是剪枝导致）
+                    # Structure mismatch (likely due to pruning)
                     return False
             
             return True
             
         except Exception:
-            # 出错时保守处理，认为不匹配
+            # On error, assume mismatch
             return False
 
     def _load_state_into_infer(self, snapshot: Dict[str, Any]):
@@ -745,7 +745,7 @@ class PolicyManager:
             print(f"[PolicyManager] ⚠️ Failed to update local inference model: {exc}")
 
     # ------------------------------------------------------------------
-    # 可选：编译本地训练 backbone 加速前向
+    # Optional: compile local training backbone to speed forward passes
     # ------------------------------------------------------------------
     def _compile_training_backbone_once(self):
         if self._training_backbone_compiled:

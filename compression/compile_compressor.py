@@ -8,17 +8,17 @@ from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
 
 from compression.base import BaseCompressor
-from models.policy import PolicyBackbone  # ⚠️你需要把这个改成你的真实路径
+from models.policy import PolicyBackbone  # ⚠️ Update to your actual path if needed
 
 
 class CompileCompressor(BaseCompressor):
     """
-    用于 torch.compile 的压缩器。
+    Compressor for torch.compile.
 
-    主要功能：
-    - 从 train_model.backbone 拍 snapshot（state_dict clone）
-    - 基于权重 diff 判断是否需要重新 compile
-    - 调用 torch.compile 生成 compiled_backbone
+    Key actions:
+    - Snapshot train_model.backbone (state_dict clone)
+    - Use weight diff to decide whether to recompile
+    - Call torch.compile to generate compiled_backbone
     """
 
     def __init__(self,
@@ -28,11 +28,11 @@ class CompileCompressor(BaseCompressor):
                  recompile_every: int = 2,
                  sparsity_change_threshold: float = 0.05):
         """
-        参数:
-            backend: torch.compile backend（一般用 inductor）
-            diff_threshold: 若新旧 snapshot 平均差异大于此阈值则重新编译
-            recompile_every: 每 N 次压缩后强制重新编译（解决稀疏性变化问题）
-            sparsity_change_threshold: 稀疏性变化超过此阈值时重新编译
+        Args:
+            backend: torch.compile backend (typically inductor)
+            diff_threshold: Recompile if mean snapshot diff exceeds this threshold
+            recompile_every: Force recompile every N compressions (handles sparsity shifts)
+            sparsity_change_threshold: Recompile when sparsity change exceeds this threshold
         """
         self.backend = backend
         self.diff_threshold = diff_threshold
@@ -40,8 +40,8 @@ class CompileCompressor(BaseCompressor):
         self.recompile_every = recompile_every
         self.sparsity_change_threshold = sparsity_change_threshold
         
-        # ✅ 支持 weight sync
-        # 对于 prune+compile pipeline，会先同步权重，然后重新应用 mask
+        # ✅ Supports weight sync
+        # For prune+compile pipelines, weights are synced before masks are reapplied
         self.supports_weight_sync = True
         if torch is not None:
             try:
@@ -67,7 +67,7 @@ class CompileCompressor(BaseCompressor):
     # 1. snapshot
     # ------------------------------------------------------------
     def snapshot(self, train_model: Any) -> Dict[str, torch.Tensor]:
-        """复制 backbone 的 state_dict（无梯度，cpu clone）。"""
+        """Copy backbone state_dict (no gradients, CPU clone)."""
         bb = train_model.backbone
         if hasattr(bb, "_orig_mod"):
             bb_to_copy = bb._orig_mod
@@ -89,15 +89,15 @@ class CompileCompressor(BaseCompressor):
         return state
 
     # ------------------------------------------------------------
-    # 2. diff 检测
+    # 2. Diff check
     # ------------------------------------------------------------
     def should_recompress(self,
                           new_snapshot: Dict[str, torch.Tensor],
                           last_snapshot: Dict[str, torch.Tensor]) -> bool:
-        """基于参数差分判断是否需要重新编译。"""
+        """Decide whether recompilation is needed based on parameter diffs."""
 
         if last_snapshot is None:
-            return True  # 第一次必须压缩
+            return True  # Always compress the first time
 
         diffs = []
         for k in new_snapshot:
@@ -113,16 +113,16 @@ class CompileCompressor(BaseCompressor):
     # ------------------------------------------------------------
     def compress(self, snapshot) -> Tuple[Any, Dict[str, Any]]:
         """
-        执行 torch.compile，返回新的 compiled_backbone。
-        
-        支持两种输入：
-        1. Dict[str, torch.Tensor] - state_dict (来自 snapshot)
-        2. PolicyBackbone - 模型对象 (来自上游 compressor，如剪枝)
+        Run torch.compile and return a new compiled_backbone.
+
+        Supports two input forms:
+        1. Dict[str, torch.Tensor] - state_dict (from snapshot)
+        2. PolicyBackbone - model object (from upstream compressor, e.g., pruning)
         """
         
-        # 检测输入类型
+        # Detect input type
         if isinstance(snapshot, dict):
-            # 情况 1: state_dict
+            # Case 1: state_dict
             if self._meta is None:
                 raise RuntimeError("CompileCompressor snapshot meta is missing.")
             in_dim = self._meta["in_dim"]
@@ -131,14 +131,14 @@ class CompileCompressor(BaseCompressor):
             use_residual: bool = self._meta.get("use_residual", False)
             state_dict = snapshot
         elif isinstance(snapshot, (PolicyBackbone, torch.nn.Module)):
-            # 情况 2: 来自上游的模型对象（例如 MaskPruneCompressor 的输出）
+            # Case 2: model object from upstream (e.g., MaskPruneCompressor output)
             bb_input = snapshot
             
-            # 解包 compile wrapper
+            # Unwrap compile wrapper
             if hasattr(bb_input, "_orig_mod"):
                 bb_input = bb_input._orig_mod
             
-            # 如果是 MaskedPolicyBackbone，提取内部的 backbone
+            # If MaskedPolicyBackbone, extract inner backbone
             if hasattr(bb_input, "backbone"):
                 actual_bb = bb_input.backbone
                 if hasattr(actual_bb, "_orig_mod"):
@@ -149,13 +149,13 @@ class CompileCompressor(BaseCompressor):
             if self.device is not None and hasattr(actual_bb, 'to'):
                 actual_bb = actual_bb.to(self.device)
             
-            # 从模型推断结构（用于 meta）
+            # Infer structure from the model (for meta)
             in_dim = actual_bb.hidden_layers[0].in_features if len(actual_bb.hidden_layers) > 0 else 4
             num_outputs = actual_bb.policy_head.out_features
             hidden_dims = [layer.out_features for layer in actual_bb.hidden_layers]
             use_residual = actual_bb.use_residual
             
-            # 更新 meta
+            # Update meta
             self._meta = {
                 "in_dim": in_dim,
                 "num_outputs": num_outputs,
@@ -249,11 +249,11 @@ class CompileCompressor(BaseCompressor):
         else:
             raise TypeError(f"CompileCompressor.compress() expects Dict or nn.Module, got {type(snapshot)}")
 
-        # 只有在 snapshot 是 dict 时才尝试复用
+        # Only attempt reuse when the snapshot is a dict
         if isinstance(snapshot, dict):
             reused = False
             if self._compiled_model is not None and self._raw_model is not None:
-                # 检查结构是否一致
+                # Check if structures match
                 try:
                     load_start = time.time()
                     self._raw_model.load_state_dict(state_dict)
@@ -261,7 +261,7 @@ class CompileCompressor(BaseCompressor):
                     compiled_bb = self._compiled_model
                     reused = True
                 except RuntimeError:
-                    # 结构不匹配，需要重新编译
+                    # Structure mismatch, need to recompile
                     reused = False
                     self._compiled_model = None
                     self._raw_model = None

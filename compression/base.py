@@ -6,34 +6,34 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 # ============================================================
-# 1. 抽象压缩器接口（compile/quant/prune/distill 继承自这个类）
+# 1. Abstract compressor interface (compile/quant/prune/distill inherit from this)
 # ============================================================
 class BaseCompressor(abc.ABC):
-    """压缩器通用接口。
+    """Generic compressor interface.
 
-    每种具体压缩方式必须实现：
-    - snapshot(): 如何从 train_model 抽取压缩所需的状态
-    - should_recompress(): 判断是否需要重新压缩
-    - compress(): 执行实际的压缩行为
+    Each concrete compression implementation must provide:
+    - snapshot(): how to extract the required state from train_model
+    - should_recompress(): decide whether to recompress
+    - compress(): perform the actual compression
     """
 
-    # 标记该压缩器的结果是否支持单纯通过更新 state_dict
-    # 来同步推理侧的权重（例如 torch.compile 后的模型）。
+    # Marks whether this compressor's output can be synced by weight-only state_dict updates
+    # (e.g., torch.compile'd models).
     supports_weight_sync: bool = False
 
     @abc.abstractmethod
     def snapshot(self, train_model: Any) -> Any:
-        """从训练模型抽取 snapshot（通常是 state_dict 的某种复制）。
+        """Extract a snapshot from the training model (typically a copy of state_dict).
 
-        返回：
-            任意用于后续 should_recompress 和 compress 的快照对象。
+        Returns:
+            Any snapshot object used later by should_recompress and compress.
         """
         raise NotImplementedError
 
     def should_recompress(self, new_snapshot: Any, last_snapshot: Optional[Any]) -> bool:
-        """基于快照判断是否需要重新压缩。可被 override。
+        """Determine whether recompression is needed based on the snapshot. Can be overridden.
 
-        默认策略：如果没有 last_snapshot → 压缩，否则永远压缩。
+        Default strategy: compress if last_snapshot is None; otherwise always recompress.
         """
         if last_snapshot is None:
             return True
@@ -41,10 +41,10 @@ class BaseCompressor(abc.ABC):
 
     @abc.abstractmethod
     def compress(self, snapshot: Any) -> Tuple[Any, Dict[str, Any]]:
-        """执行压缩。
+        """Perform compression.
 
-        返回：
-            compressed_model: 压缩后的可推理模型（例如 compiled_backbone）
-            meta: 字典，记录 latency、压缩类型等额外信息
+        Returns:
+            compressed_model: compressed inference model (e.g., compiled_backbone)
+            meta: dict capturing latency, compression type, and other info
         """
         raise NotImplementedError

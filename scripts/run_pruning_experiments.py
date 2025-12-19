@@ -1,19 +1,15 @@
 """
-运行剪枝实验脚本
+Run pruning experiment script.
 
-用法：
+Usage:
     python scripts/run_pruning_experiments.py --experiment basic
-
     python scripts/run_pruning_experiments.py --experiment ratios
-    
     python scripts/run_pruning_experiments.py --experiment strategies
-    
     python scripts/run_pruning_experiments.py --experiment freq
-    
     python scripts/run_pruning_experiments.py --experiment basic --epochs 300 --hidden-dim 512
 """
 
-# ✅ 修复 OpenMP 冲突（必须在所有导入之前设置，使用 os.environ 而不是 import os）
+# ✅ Fix OpenMP conflicts (must be set before imports; use os.environ instead of import os)
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 os.environ['OMP_NUM_THREADS'] = '1'
@@ -23,7 +19,7 @@ import argparse
 import random
 import copy
 
-# 添加项目根目录到 path
+# Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
@@ -40,12 +36,12 @@ from framework.policy_manager import CompileMode
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# 注册全局模型
+# Register the global model with RLlib
 from models.policy import CustomPolicyNet  # noqa
 
 
 def get_experiments(experiment_type: str):
-    """根据实验类型返回对应的实验配置"""
+    """Return experiment configurations for the requested type."""
     if experiment_type == "basic":
         from config_pruning import EXPERIMENTS_BASIC as EXPERIMENTS
     elif experiment_type == "ratios":
@@ -127,24 +123,24 @@ def build_config(hidden_layers, device: str, hparams):
         .training(**training_kwargs)
     )
     
-    # 禁用新的 API stack（兼容旧的 custom_model）
+    # Disable new API stack for backward compatibility with custom_model
     try:
         config = config.api_stack(
             enable_rl_module_and_learner=False,
             enable_env_runner_and_connector_v2=False,
         )
     except AttributeError:
-        pass  # 旧版本没有这个方法
+        pass  # Older Ray versions don't provide this
     
-    # 兼容不同版本的 Ray API
+    # Handle Ray API differences across versions
     try:
-        # Ray >= 2.10 使用 env_runners
+        # Ray >= 2.10 uses env_runners
         config = config.env_runners(
             num_env_runners=hparams["num_rollout_workers"],
             rollout_fragment_length=hparams["rollout_fragment_length"],
         )
     except AttributeError:
-        # Ray < 2.10 使用 rollouts
+        # Ray < 2.10 falls back to rollouts
         config = config.rollouts(
             num_rollout_workers=hparams["num_rollout_workers"],
             rollout_fragment_length=hparams["rollout_fragment_length"],
@@ -227,7 +223,7 @@ def main():
     
     args = parser.parse_args()
     
-    # 初始化 Ray
+    # Initialize Ray
     ray.init(include_dashboard=False)
     
     from config_pruning import DEFAULT_HPARAMS
@@ -312,7 +308,7 @@ def main():
             config=config,
             compressors=compressors,
             compile_mode=exp["mode"],
-            trigger_every=trigger_every,  # ← 使用统一的配置
+            trigger_every=trigger_every,  # Use the unified trigger configuration
             enable_diff_check=exp.get("enable_diff_check", True),
             compile_training_backbone=exp["compile_training_backbone"],
             log_dir=os.path.join("logs", f"pruning_{args.experiment}", exp["name"]),
@@ -358,4 +354,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

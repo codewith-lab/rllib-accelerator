@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore", message=".*Custom ModelV2.*")
 warnings.filterwarnings("ignore", message=".*Install gputil.*")
 warnings.filterwarnings("ignore", message=".*remote_workers.*")
 
-# 注册全局模型
+# Register the global model with RLlib
 from models.policy import CustomPolicyNet    # noqa
 
 
@@ -85,28 +85,31 @@ def build_config(hidden_layers, device: str, hparams):
         PPOConfig()
         .environment(hparams["env_id"])
         .framework("torch")
-        .resources(num_gpus=1 if use_gpu else 0)
+        .resources(
+            num_gpus=1 if use_gpu else 0,
+            num_gpus_per_worker=0.25 if use_gpu else 0,
+        )
         .training(**training_kwargs)
     )
     
-    # 禁用新的 API stack（兼容旧的 custom_model）
+    # Disable new API stack for backward compatibility with custom_model
     try:
         config = config.api_stack(
             enable_rl_module_and_learner=False,
             enable_env_runner_and_connector_v2=False,
         )
     except AttributeError:
-        pass  # 旧版本没有这个方法
+        pass  # Older Ray versions don't provide this
     
-    # 兼容不同版本的 Ray API
+    # Handle Ray API differences across versions
     try:
-        # Ray >= 2.10 使用 env_runners
+        # Ray >= 2.10 uses env_runners
         config = config.env_runners(
             num_env_runners=hparams["num_rollout_workers"],
             rollout_fragment_length=hparams["rollout_fragment_length"],
         )
     except AttributeError:
-        # Ray < 2.10 使用 rollouts
+        # Ray < 2.10 falls back to rollouts
         config = config.rollouts(
             num_rollout_workers=hparams["num_rollout_workers"],
             rollout_fragment_length=hparams["rollout_fragment_length"],
@@ -132,9 +135,14 @@ def build_compressors(exp_conf, device, hparams):
                 )
             )
         elif name == "quant":
+            quant_mode = exp_conf.get("quant_mode", hparams.get("quant_mode", "dynamic"))
             comps.append(
                 QuantCompressor(
                     diff_threshold=hparams["quant_diff_threshold"],
+                    mode=quant_mode,
+                    trt_calib_batches=hparams.get("quant_trt_calib_batches", 4),
+                    trt_calib_batch_size=hparams.get("quant_trt_calib_batch_size", 64),
+                    device=device,
                 )
             )
         elif name == "prune":
@@ -175,6 +183,44 @@ def build_compressors(exp_conf, device, hparams):
     return comps
 
 
+def _collect_trt_calibration(algo, target_samples: int, batch_size: int):
+    """Collect on-policy tensors exactly as fed into the model for TensorRT calibration."""
+    worker = algo.workers.local_worker()
+    policy = worker.get_policy()
+    model = getattr(policy, "model", None)
+    if model is None or not hasattr(model, "_collect_calib"):
+        raise RuntimeError("Policy model does not support calibration capture.")
+
+    model._collect_calib = True
+    model._calib_buffer.clear()
+
+    try:
+        while len(model._calib_buffer) < target_samples:
+            worker.sample()
+    finally:
+        model._collect_calib = False
+
+    return model._calib_buffer[:target_samples]
+
+
+def maybe_prepare_trt_calibration(compressors, trainer, hparams):
+    """If TensorRT INT8 is requested and no calibration is set, collect once before training."""
+    try:
+        trt_target = hparams.get("quant_trt_calib_batches", 4) * hparams.get("quant_trt_calib_batch_size", 64)
+        for comp in compressors:
+            if isinstance(comp, QuantCompressor) and comp.mode == "tensorrt_int8" and comp.calibration_data is None:
+                print(f"Collecting {trt_target} calibration samples for TensorRT INT8...")
+                calib = _collect_trt_calibration(trainer.algo, trt_target, hparams.get("quant_trt_calib_batch_size", 64))
+                if calib:
+                    comp.set_calibration_data(calib)
+                    print(f"Calibration data prepared for TensorRT INT8.")
+                else:
+                    print(f"Failed to collect calibration samples; TensorRT INT8 may fail.")
+                break
+    except Exception as exc:
+        print(f"Calibration data collection failed: {exc}")
+
+
 if __name__ == "__main__":
 
     ray.init(include_dashboard=False)
@@ -211,14 +257,21 @@ if __name__ == "__main__":
             infer_output_index=infer_index,
             wandb_enabled=hparams.get("use_wandb", False),
             wandb_project=hparams.get("wandb_project"),
-            wandb_run_name=f"{exp['name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+             wandb_run_name= f"{exp['name']}_{hparams['hidden_dim']}_{hparams['device']}_{exp['trigger_every']}",
             wandb_config={
                 "experiment": exp["name"],
                 "env_id": hparams["env_id"],
                 "group": hparams.get("wandb_group"),
             },
             async_warmup=exp.get("async_warmup", False),
+            min_epoch_before_compress=exp.get(
+                "min_epoch_before_compress",
+                hparams.get("min_epoch_before_compress", 0),
+            ),
         )
+        # If using TensorRT int8 quant, collect calibration data before training starts
+        maybe_prepare_trt_calibration(compressors, trainer, hparams)
+
         trainer.run(num_epochs=hparams["num_epochs"])
         trainer.summary()
 

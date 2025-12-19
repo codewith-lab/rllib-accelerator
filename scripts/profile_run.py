@@ -23,7 +23,7 @@ from compression.compile_compressor import CompileCompressor
 from config import DEFAULT_HPARAMS
 from framework.policy_manager import CompileMode
 from framework.trainer import Trainer
-# 注册自定义模型
+# Register custom model with RLlib
 from models.policy import CustomPolicyNet  # noqa
 
 
@@ -57,7 +57,7 @@ def build_config(hidden_layers, device: str, hparams):
         )
     )
     
-    # 兼容不同版本的 Ray API
+    # Handle Ray API differences across Ray versions
     try:
         config = config.env_runners(
             num_env_runners=hparams["num_rollout_workers"],
