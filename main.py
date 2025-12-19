@@ -226,18 +226,17 @@ if __name__ == "__main__":
     ray.init(include_dashboard=False)
 
     hparams = DEFAULT_HPARAMS
-    device = resolve_device(hparams["device"])
     apply_global_seed(hparams.get("seed"))
     if hparams.get("seed") is not None:
         print(f"[main] Using seed: {hparams['seed']}")
-    print(f"[main] Using device: {device}")
-
     hidden_layers = [hparams["hidden_dim"]] * hparams["hidden_depth"]
 
     for exp in EXPERIMENTS:
+        exp_device = resolve_device(exp.get("device", "cpu"))
         print(f"\n========== Running {exp['name']} ({exp['mode'].value}) ==========")
-        config = build_config(hidden_layers, device, hparams)
-        compressors = build_compressors(exp, device, hparams)
+        print(f"[main] Using device: {exp_device}")
+        config = build_config(hidden_layers, exp_device, hparams)
+        compressors = build_compressors(exp, exp_device, hparams)
         infer_index = exp.get("infer_output_index")
         if compressors:
             if infer_index is None or infer_index < 0:
@@ -253,14 +252,15 @@ if __name__ == "__main__":
             enable_diff_check=exp.get("enable_diff_check", True),
             compile_training_backbone=exp["compile_training_backbone"],
             log_dir=os.path.join("logs", exp["name"]),
-            device=device,
+            device=exp_device,
             infer_output_index=infer_index,
             wandb_enabled=hparams.get("use_wandb", False),
             wandb_project=hparams.get("wandb_project"),
-             wandb_run_name= f"{exp['name']}_{hparams['hidden_dim']}_{hparams['device']}_{exp['trigger_every']}",
+            wandb_run_name=f"{exp['name']}_{hparams['hidden_dim']}_{exp_device}_{exp['trigger_every']}",
             wandb_config={
                 "experiment": exp["name"],
                 "env_id": hparams["env_id"],
+                "device": exp_device,
                 "group": hparams.get("wandb_group"),
             },
             async_warmup=exp.get("async_warmup", False),

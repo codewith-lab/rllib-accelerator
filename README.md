@@ -16,10 +16,10 @@ python main.py                           # run all experiments enumerated in con
 Key runtime controls live in `config.py`:
 
 - `DEFAULT_HPARAMS`: environment name, batch sizes, learning rate (+ optional decay),
-  model size, resource allocation, device, etc.
+  model size, resource allocation, etc.
 - `EXPERIMENTS`: list of scenarios to execute. Each entry specifies compile mode,
-  compressor list, trigger cadence, warmup flag, and whether the training backbone
-  should be compiled.
+  compressor list, trigger cadence, warmup flag, whether the training backbone
+  should be compiled, and device requirements.
 
 ## wandb links
 ### Compile
@@ -115,7 +115,8 @@ rollout workers.
 ## Reproducing Custom Runs
 
 1. Edit `config.py` to include the scenarios and hyper-parameters you want.
-2. (Optional) set `ACCEL_DEVICE=cuda:0` to run training on GPU.
+2. (Optional) set per-experiment `device` in `config.py` (or set `ACCEL_DEVICE=cuda:0`
+   to override globally) to run training on GPU.
 3. Run `python main.py`. Logs appear under `logs/` and `results/`.
 4. Use the plotting scripts above to compare modes or tune quantization triggers.
 

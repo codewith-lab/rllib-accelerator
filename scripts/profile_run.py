@@ -99,7 +99,7 @@ def main():
     hparams["rollout_fragment_length"] = max(250, hparams["rollout_fragment_length"] // 4)
     hparams["num_rollout_workers"] = min(2, hparams["num_rollout_workers"])
 
-    device = resolve_device(hparams["device"])
+    device = resolve_device("cpu")
     hidden_layers = [hparams["hidden_dim"]] * hparams["hidden_depth"]
 
     compile_mode = {

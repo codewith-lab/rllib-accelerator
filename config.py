@@ -26,8 +26,6 @@ DEFAULT_HPARAMS = {
     "quant_mode": "dynamic",  
     "quant_trt_calib_batches": 4,
     "quant_trt_calib_batch_size": 64,
-    # Device selection (default CPU; set to "cuda:0" to use GPU)
-    "device": "cpu",
     # Learning rate decay (optional)
     "lr_decay": {
         "enabled": True,
@@ -42,57 +40,60 @@ DEFAULT_HPARAMS = {
 }
 
 
+_COMMON_EXPERIMENT = {
+    "infer_output_index": -1,
+    "device": "cpu",
+}
+
+_BASELINE_EXPERIMENT = {
+    **_COMMON_EXPERIMENT,
+    "mode": CompileMode.NONE,
+    "compile_training_backbone": False,
+    "trigger_every": 0,
+    "async_warmup": False,
+}
+
+_ASYNC_EXPERIMENT = {
+    **_COMMON_EXPERIMENT,
+    "mode": CompileMode.ASYNC,
+    "compile_training_backbone": True,
+    "trigger_every": 1,
+    "async_warmup": True,
+}
+
 EXPERIMENTS = [
     {
+        **_BASELINE_EXPERIMENT,
         "name": "baseline",
-        "mode": CompileMode.NONE,
-        "compile_training_backbone": False,
-        "trigger_every": 0,
         "enable_diff_check": False,
         "compressors": ["compile"],
-        "async_warmup": False,
-        "infer_output_index": -1,
     },
     {
+        **_ASYNC_EXPERIMENT,
         "name": "async_compile",
-        "mode": CompileMode.ASYNC,
-        "compile_training_backbone": True,
-        "trigger_every": 1,
         "enable_diff_check": False,
         "compressors": ["compile"],
-        "async_warmup": True,
-        "infer_output_index": -1,
     },
     {
+        **_ASYNC_EXPERIMENT,
         "name": "async_quant",
-        "mode": CompileMode.ASYNC,
-        "compile_training_backbone": True,
-        "trigger_every": 1,
         "enable_diff_check": True,
         "compressors": ["quant"],
-        "async_warmup": True,
-        "infer_output_index": -1,
     },
     {
+        **_ASYNC_EXPERIMENT,
         "name": "async_quant_weight_only",
-        "mode": CompileMode.ASYNC,
-        "compile_training_backbone": True,
-        "trigger_every": 1,
         "enable_diff_check": True,
         "compressors": ["quant"],
-        "async_warmup": True,
-        "infer_output_index": -1,
         "quant_mode": "weight_only",
+        "device": "cuda:0",
     },
     # {
+    #     **_ASYNC_EXPERIMENT,
     #     "name": "async_quant_tensorrt_int8",
-    #     "mode": CompileMode.ASYNC,
-    #     "compile_training_backbone": True,
-    #     "trigger_every": 1,
     #     "enable_diff_check": True,
     #     "compressors": ["quant"],
-    #     "async_warmup": True,
-    #     "infer_output_index": -1,
     #     "quant_mode": "tensorrt_int8",
+    #     "device": "cuda:0",
     # },
 ]
