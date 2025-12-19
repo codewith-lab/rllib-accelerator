@@ -35,10 +35,23 @@ https://api.wandb.ai/links/fm2859-columbia-university/shlmnaw0
 Asynchronous compilation reduces steady-state iteration time by overlapping compilation with training. However, both sync and async compilation show early-epoch latency spikes due to first-inference overhead, which must be removed via warmup to achieve stable speedup.
 
 ### Quantization
-![Reward comparison](results/compile&quant&baseline/quality_comparison_layer=4_dim=512/reward_compare.png)
 
-![Inference comparison](results/compile&quant&baseline/layer8_inference_time.png)
-Quantization accelerates inference but introduces a trade-off between speed and learning stability. High-frequency quantization leads to reward instability, while lower frequency improves stability at the cost of slower convergence. Acceleration for small model is moderate, but is more significant for lager models.
+
+<img width="759" height="251" alt="Screenshot 2025-12-19 at 3 33 50 PM" src="https://github.com/user-attachments/assets/5679a81d-6c3c-4220-b11d-c583d9d0d008" />
+
+<img width="759" height="231" alt="Screenshot 2025-12-19 at 3 43 31 PM" src="https://github.com/user-attachments/assets/fc3f46da-262f-46d6-85a6-1ab7bae9305b" />
+
+- Speedup
+  - Model size
+      - Large dimensions: desirable
+      - Small dimensions: limited
+  - Hardware specific   
+      - CPU 2.5X: dynamic quantization
+      - GPU 3.3X: weight-only quantization
+- Reward
+  - Weight-only quantization exhibits the most stable training behavior 
+  - Dynamic quantization accelerates inference but introduces a trade-off between speed and learning stability.
+    - High-frequency quantization leads to reward instability, while lower frequency improves stability at the cost of slower convergence. Acceleration for small model is moderate, but is more significant for lager models.
 
 
 ## Compression Modes
@@ -48,14 +61,16 @@ The policy manager owns a `CompressionController` that snapshots the local train
 backbone, applies the configured compressor(s), and broadcasts models/weights to
 rollout workers.
 
-### Baseline (no compile)
+### 1. Baseline (no compile)
 
 - `mode = CompileMode.NONE`.
 - `compressors = ["compile"]` but the compression pipeline is never triggered.
 - Trainer simply performs PPO rollouts/train steps and relies on RLlib's default
   `sync_weights()` to keep workers on-policy.
 
-### Sync Compile
+### 2. Compile
+
+#### Sync Compile
 
 - `mode = CompileMode.SYNC`.
 - At the end of each epoch (or whenever the trigger policy fires), the controller
@@ -64,7 +79,7 @@ rollout workers.
 - Since the swap happens inside the training critical path, the epoch includes the
   compile latency; there is no overlap with rollout/learning time.
 
-### Async Compile
+#### Async Compile
 
 - `mode = CompileMode.ASYNC`.
 - The controller snapshots the training backbone and launches a background thread
@@ -76,20 +91,38 @@ rollout workers.
   the newest parameters even while the compiled module is reused, so async compile
   behaves like the baseline with a faster forward path.
 
-### Async Compile with Warmup
+#### Async Compile with Warmup
 
 - Same as async compile, but `async_warmup=True`.
 - After swapping the module the first time, every worker runs a dummy forward pass
   (`warmup_compiled_backbone()`) so that PyTorch captures the graph before real
   rollouts. This hides the first-iteration compilation overhead.
 
-### Async Quant with Warmup
+
+### 3. Quantization 
+
+<img width="601" height="146" alt="Screenshot 2025-12-19 at 3 39 14 PM" src="https://github.com/user-attachments/assets/1f320ecb-0d70-49ff-acbd-353753ece667" />
+
+
+#### Async Quant with Warmup
 
 - `compressors = ["quant"]` (dynamic quantization on linear layers).
 - Quantized modules cannot reuse training weights, so every swap transmits the full
   quantized backbone.
 - `async_warmup=True` runs a dummy pass to prime CPU kernels. Trigger cadence and
   diff-threshold control how often re-quantization occurs.
+
+#### Async Weight-Only Quant with Warmup
+
+- Compresses model weights to INT8 while keeping activations in floating point.
+- Evaluated exclusively on GPU, where mixed-precision GEMM kernels leverage Tensor Cores.
+
+#### Async TensorRT Quant with Warmup
+
+- Full post-training INT8 quantization with calibration.
+- Quantizes both weights and activations and generates a TensorRT execution engine.
+- Not evaluated in this study due to unavailable hardware configuration and calibration tooling.
+
 
 ## Benchmark & Plot Scripts
 
