@@ -6,6 +6,46 @@ focuses on the CartPole-v1 benchmark and provides end-to-end tooling for
 benchmarking baseline PPO, synchronous compilation, asynchronous compilation
 (with/without warmup), and asynchronous quantization with warmup.
 
+## Problem Statement
+
+Although compiler-based optimizations can substantially reduce the execution time of individual forward passes, naively integrating compilation into an RL training loop does not reliably translate into faster training. In existing RLlib implementations, compilation is typically performed synchronously and placed on the training critical path, introducing non-trivial compilation latency. Furthermore, compiled policies often incur significant first-inference overhead due to graph initialization, runtime setup, or kernel selection, which can offset the expected performance gains.
+
+**Our Objectives:**
+
+- Design and evaluate improved compilation strategies that decouple compilation from the training critical path (asynchronous background compilation and policy warmup)
+
+## Model Description
+
+**Framework:** PyTorch with RLlib
+
+**Algorithm:** Proximal Policy Optimization (PPO) - an on-policy reinforcement learning algorithm
+
+**Environment:** OpenAI Gym CartPole-v1 benchmark
+
+**Policy Architecture:**
+
+- Multi-layer perceptron (MLP) with configurable hidden dimensions and depth
+- Default: 4-layer network with 256 hidden units
+- Optional residual connections for deeper networks
+- Supports model sizes ranging from 256 to 2048 hidden dimensions for scalability experiments
+
+**Custom Components:**
+
+- **CompressionController**: Manages snapshot, compression, and deployment of policies to rollout workers
+- **Asynchronous compilation pipeline**: Background thread-based compilation with parameter injection
+- **Policy warmup mechanism**: Eliminates first-inference overhead through dummy forward passes
+- **Compression modes**:
+  - Compile-based (torch.compile with synchronous/asynchronous modes)
+  - Quantization (dynamic INT8, weight-only, TensorRT)
+  - Pruning (magnitude-based structured pruning with iterative schedules)
+
+**Training Configuration:**
+
+- 4 rollout workers for parallel data collection
+- 2000 samples per training batch
+- Learning rate with optional decay schedule
+- Configurable device placement (CPU/GPU)
+
 ## Quick Start
 
 ### Compile & Quantization Experiments
