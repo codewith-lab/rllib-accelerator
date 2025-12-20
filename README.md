@@ -86,6 +86,7 @@ Asynchronous compilation reduces steady-state iteration time by overlapping comp
 ### Pruning
 
 ![Pruning Reward Comparison](logs/pruning_basic_final/reward_comparison.png)
+![Pruning Reward Comparison](logs/pruning_basic_final/pruning_performance.png)
 
 Combining pruning with torch.compile (async_prune_compile) achieves the best performance gains with 3.4% higher throughput and 7.8% faster inference time, demonstrating that these techniques complement each other effectively. However, pruning introduces a reward trade-off, with pure pruning showing 4.6% degradation and pruning+compile showing 3.5% degradation compared to baseline, suggesting the 15% sparsity level moderately impacts learning capacity.
 
